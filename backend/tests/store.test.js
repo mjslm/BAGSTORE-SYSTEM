@@ -263,6 +263,16 @@ test('AI failure falls back cleanly and validated picks only include real databa
   assert.deepEqual(result.products.map((bag) => [bag.id, bag.price_cents]), [['city-backpack',159900]]);
 });
 
+test('Bag Finder returns in-stock catalog matches when Gemini times out', async () => {
+  const discover = createDiscovery(db, { key: 'fixture', request: async () => {
+    throw new DOMException('Timed out', 'TimeoutError');
+  } });
+  const result = await discover('A bag for my 16-inch laptop under PHP 2000');
+  assert.equal(result.aiAssisted, false);
+  assert.ok(result.products.length > 0 && result.products.length <= 4);
+  assert.ok(result.products.every((bag) => bag.laptop_inches >= 16 && bag.price_cents <= 200000 && bag.stock > 0));
+});
+
 test('admin inventory changes are auditable and soft deletion preserves order references', async () => {
   const id = 'city-backpack';
   const change = await call('PATCH', '/admin/products/' + id + '/stock', { token: admin, body: { stock: 14, reason: 'New stock arrived' } });

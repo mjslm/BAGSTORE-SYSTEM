@@ -35,7 +35,7 @@ export default function Discovery() {
     </form>
     <ErrorBox error={error} />{error && <Link className="button subtle" to="/products">Search the catalog instead</Link>}
     {busy && <SkeletonLoader grid />}
-    {result && (result.products.length > 0 ? <section className="recommendations"><h2>AI-Assisted picks</h2><div className="product-grid">
+    {result && (result.products.length > 0 ? <section className="recommendations"><h2>{result.aiAssisted ? 'AI-Assisted picks' : 'Catalog matches'}</h2><div className="product-grid">
       {result.products.map((product) => <ProductCard product={product} key={product.id} />)}
     </div></section> : <Empty title="No available bags fit that request" icon="search"><Link className="button subtle" to="/products">Search the catalog</Link></Empty>)}
   </section>;

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#cf9d6b"/><stop offset=".5" stop-color="#ad754a"/><stop offset="1" stop-color="#905e3a"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#905e3a"/><stop offset="1" stop-color="#ad754a"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#905e3a"/><stop offset=".45" stop-color="#cf9d6b"/><stop offset="1" stop-color="#905e3a"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M224 229V162c0-106 151-106 151 0v68" fill="none" stroke="#744b30" stroke-width="20"/><path d="M224 225V162c0-106 151-106 151 0v64" fill="none" stroke="url(#handle)" stroke-width="13"/>
+<path d="m149 214 291-1 30 218q-3 21-28 23H156q-25-3-22-29Z" fill="url(#side)"/>
+<path d="M149 214q140 18 276 0l-12 223q-110 26-274-1Z" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M158 228q124 15 254 0l-10 202q-125 19-252 0Z" fill="none" stroke="#eed5af" stroke-width="1.1" stroke-dasharray="3 3" opacity=".65"/>
+<path d="M212 257V161c0-103 149-101 149 0v96" fill="none" stroke="#794e30" stroke-width="18"/><path d="M212 257V161c0-103 149-101 149 0v96" fill="none" stroke="url(#handle)" stroke-width="12"/>
+<path d="M207 232v36m149-36v36" stroke="#d5ac75" stroke-width="1.2" stroke-dasharray="3 3"/>
+<rect x="268" y="287" width="63" height="21" rx="2" fill="#9b623b" opacity=".7"/><text x="300" y="301" fill="#dfc6a2" font-family="Georgia,serif" font-size="9" text-anchor="middle" letter-spacing="1">CARRY &amp; CO.</text></g></svg>

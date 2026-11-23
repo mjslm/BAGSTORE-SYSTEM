@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#7a896c"/><stop offset=".5" stop-color="#57694d"/><stop offset="1" stop-color="#3c503b"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#3c503b"/><stop offset="1" stop-color="#57694d"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#3c503b"/><stop offset=".45" stop-color="#7a896c"/><stop offset="1" stop-color="#3c503b"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M194 214q-56-65-48 192m257-188q52-73 57 188" fill="none" stroke="#44513d" stroke-width="15"/><path d="M268 160v-25q30-19 60 0v25" fill="none" stroke="#53644b" stroke-width="16"/>
+<path d="M192 227q4-72 104-75 107 0 118 75l15 182q0 39-40 42H208q-37-3-36-42Z" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M185 237q110 33 230-3l-7-38q-105-76-210 1Z" fill="url(#side)"/><path d="M193 238q110 25 210-4" stroke="#9da586" fill="none" stroke-width="1.3" stroke-dasharray="3 3"/>
+<rect x="270" y="219" width="56" height="32" rx="4" fill="#3d4b38"/><rect x="286" y="237" width="23" height="30" rx="3" fill="#bcab76"/><rect x="292" y="241" width="11" height="17" rx="2" fill="#4b5c44"/>
+<rect x="210" y="311" width="181" height="108" rx="17" fill="url(#side)"/><path d="M222 337h156m-156 7h156" stroke="#303e30" stroke-width="2"/><path d="M229 337v18" stroke="#cbb787" stroke-width="4"/>
+<path d="M219 361v42q80 10 163 0v-42" fill="none" stroke="#9da586" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="300" y="386" fill="#c5c7ab" font-family="Georgia,serif" font-size="9" text-anchor="middle" letter-spacing="1">CARRY &amp; CO.</text></g></svg>

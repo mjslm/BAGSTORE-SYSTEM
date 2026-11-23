@@ -1,0 +1,4778 @@
+openapi: 3.1.0
+info:
+  title: Carry & Co. REST API
+  version: 1.0.0
+  description: All prices use integer PHP centavos. Customer orders are private. The API owns totals,
+    inventory and payment verification.
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Check API and database availability
+      security: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                    required:
+                      - status
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  status: ok
+                meta: {}
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Create a customer account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 72
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+              required:
+                - email
+                - password
+                - name
+            example:
+              name: Jamie Cruz
+              email: new@example.com
+              password: Example!2026
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Session"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  user:
+                    id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    name: Jamie Cruz
+                    email: jamie@carry.test
+                    role: customer
+                  token: JWT returned by sign-in
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: An account already uses this email.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: EMAIL_IN_USE
+                  message: An account already uses this email.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "429":
+          description: Too many requests. Try again in a minute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: RATE_LIMIT
+                  message: Too many requests. Try again in a minute.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Sign in
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  maxLength: 254
+                  format: email
+                  pattern: ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                password:
+                  type: string
+                  minLength: 1
+                  maxLength: 128
+              required:
+                - email
+                - password
+            example:
+              email: jamie@carry.test
+              password: Enter the local test password
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Session"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  user:
+                    id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    name: Jamie Cruz
+                    email: jamie@carry.test
+                    role: customer
+                  token: JWT returned by sign-in
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Email or password is incorrect.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: INVALID_LOGIN
+                  message: Email or password is incorrect.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "429":
+          description: Too many requests. Try again in a minute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: RATE_LIMIT
+                  message: Too many requests. Try again in a minute.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Read the signed-in user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/User"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  name: Jamie Cruz
+                  email: jamie@carry.test
+                  role: customer
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /categories:
+    get:
+      tags:
+        - Catalog
+      summary: List active bag categories
+      security: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: totes
+                    name: Totes
+                    active: true
+                meta: {}
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /products:
+    get:
+      tags:
+        - Catalog
+      summary: Browse, search and filter active bags
+      security: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+        - in: query
+          name: q
+          schema:
+            default: ""
+            type: string
+            maxLength: 100
+          required: false
+        - in: query
+          name: category
+          schema:
+            type: string
+            maxLength: 64
+            pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+          required: false
+        - in: query
+          name: minPrice
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000000
+          required: false
+        - in: query
+          name: maxPrice
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000000
+          required: false
+        - in: query
+          name: laptop
+          schema:
+            type: number
+            minimum: 10
+            maximum: 20
+          required: false
+          description: Laptop screen size in inches. Only bags with a rated compartment at least this size are
+            returned.
+        - in: query
+          name: sort
+          schema:
+            default: featured
+            type: string
+            enum:
+              - featured
+              - newest
+              - price-asc
+              - price-desc
+          required: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: everyday-tote
+                    name: The Everyday Tote
+                    description: Room for your plans, big and small.
+                    color: Caramel
+                    image: /images/tote.svg
+                    background: "#e9e2d7"
+                    price_cents: 129900
+                    stock: 8
+                    laptop_inches: 14
+                    monogram_cents: 15000
+                    active: true
+                    category: Totes
+                    category_id: totes
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /products/{id}:
+    get:
+      tags:
+        - Catalog
+      summary: Read one active bag
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: everyday-tote
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Product"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: everyday-tote
+                  name: The Everyday Tote
+                  description: Room for your plans, big and small.
+                  color: Caramel
+                  image: /images/tote.svg
+                  background: "#e9e2d7"
+                  price_cents: 129900
+                  stock: 8
+                  laptop_inches: 14
+                  monogram_cents: 15000
+                  active: true
+                  category: Totes
+                  category_id: totes
+                meta: {}
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Read the customer’s saved cart
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Cart"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  items:
+                    - id: everyday-tote
+                      name: The Everyday Tote
+                      description: Room for your plans, big and small.
+                      color: Caramel
+                      image: /images/tote.svg
+                      background: "#e9e2d7"
+                      price_cents: 129900
+                      stock: 8
+                      laptop_inches: 14
+                      monogram_cents: 15000
+                      active: true
+                      category: Totes
+                      category_id: totes
+                      quantity: 1
+                      monogram: JM
+                      available: true
+                      unit_cents: 144900
+                      line_cents: 144900
+                  subtotal_cents: 144900
+                  currency: PHP
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    patch:
+      tags:
+        - Cart
+      summary: Add, change or remove a cart line
+      description: A cart line is identified by productId and monogram. Use quantity zero with add false to
+        remove it. Monograms have one to three letters and must be enabled on the bag.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productId:
+                  type: string
+                  maxLength: 64
+                  pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+                monogram:
+                  default: ""
+                  type: string
+                  pattern: ^[A-Z]{0,3}$
+                quantity:
+                  type: integer
+                  minimum: 0
+                  maximum: 20
+                add:
+                  default: false
+                  type: boolean
+              required:
+                - productId
+                - quantity
+            example:
+              productId: everyday-tote
+              quantity: 1
+              monogram: JM
+              add: true
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Cart"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  items:
+                    - id: everyday-tote
+                      name: The Everyday Tote
+                      description: Room for your plans, big and small.
+                      color: Caramel
+                      image: /images/tote.svg
+                      background: "#e9e2d7"
+                      price_cents: 129900
+                      stock: 8
+                      laptop_inches: 14
+                      monogram_cents: 15000
+                      active: true
+                      category: Totes
+                      category_id: totes
+                      quantity: 1
+                      monogram: JM
+                      available: true
+                      unit_cents: 144900
+                      line_cents: 144900
+                  subtotal_cents: 144900
+                  currency: PHP
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The total quantity exceeds available stock.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: STOCK_CONFLICT
+                  message: The total quantity exceeds available stock.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /checkout/quote:
+    post:
+      tags:
+        - Checkout
+      summary: Calculate a shipping and coupon quote
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                couponCode:
+                  default: ""
+                  anyOf:
+                    - type: string
+                      pattern: ^[A-Z0-9-]{3,24}$
+                    - type: string
+                      const: ""
+            example:
+              couponCode: CARRY10
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Quote"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  total_cents: 142410
+                  currency: PHP
+                  items:
+                    - id: everyday-tote
+                      name: The Everyday Tote
+                      description: Room for your plans, big and small.
+                      color: Caramel
+                      image: /images/tote.svg
+                      background: "#e9e2d7"
+                      price_cents: 129900
+                      stock: 8
+                      laptop_inches: 14
+                      monogram_cents: 15000
+                      active: true
+                      category: Totes
+                      category_id: totes
+                      quantity: 1
+                      monogram: JM
+                      available: true
+                      unit_cents: 144900
+                      line_cents: 144900
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: This coupon has expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: COUPON_EXPIRED
+                  message: This coupon has expired.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /checkout:
+    post:
+      tags:
+        - Checkout
+      summary: Reserve inventory and create a hosted Maya checkout
+      description: The checkout URL is null until Maya returns a hosted link. Retry the same network attempt
+        with the same key.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+            format: uuid
+            pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                couponCode:
+                  default: ""
+                  anyOf:
+                    - type: string
+                      pattern: ^[A-Z0-9-]{3,24}$
+                    - type: string
+                      const: ""
+                shipping:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      minLength: 2
+                      maxLength: 100
+                    phone:
+                      type: string
+                      pattern: ^(?:\+63|0)9\d{9}$
+                    address:
+                      type: string
+                      minLength: 8
+                      maxLength: 180
+                    city:
+                      type: string
+                      minLength: 2
+                      maxLength: 100
+                    postalCode:
+                      type: string
+                      pattern: ^\d{4}$
+                  required:
+                    - name
+                    - phone
+                    - address
+                    - city
+                    - postalCode
+              required:
+                - shipping
+            example:
+              shipping:
+                name: Jamie Cruz
+                phone: "09171234567"
+                address: 123 Quezon Avenue
+                city: Iligan City
+                postalCode: "9200"
+              couponCode: CARRY10
+      responses:
+        "200":
+          description: Existing order returned for the same idempotency key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: pending_payment
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: false
+                meta: {}
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: pending_payment
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: false
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "429":
+          description: Too many requests. Try again in a minute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: RATE_LIMIT
+                  message: Too many requests. Try again in a minute.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "503":
+          description: Maya Sandbox is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: PAYMENT_UNAVAILABLE
+                  message: Maya Sandbox is temporarily unavailable.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: List the customer’s orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending_payment
+              - paid
+              - processing
+              - shipped
+              - delivered
+              - cancelled
+              - expired
+              - failed
+          required: false
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          required: false
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          required: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OrderSummary"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    total_cents: 142410
+                    currency: PHP
+                    status: pending_payment
+                    created_at: 2026-11-22T10:00:00.000Z
+                    payment_flag: null
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Read an order and its history
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: pending_payment
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: false
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /orders/{id}/verify:
+    post:
+      tags:
+        - Orders
+      summary: Reconcile the order with Maya
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: pending_payment
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: false
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "429":
+          description: Too many requests. Try again in a minute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: RATE_LIMIT
+                  message: Too many requests. Try again in a minute.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "503":
+          description: This service is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVICE_UNAVAILABLE
+                  message: This service is temporarily unavailable.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /orders/{id}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel an unpaid checkout
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: cancelled
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: true
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: This order cannot be cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: ILLEGAL_ORDER_STATE
+                  message: This order cannot be cancelled.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "503":
+          description: This service is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVICE_UNAVAILABLE
+                  message: This service is temporarily unavailable.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /orders/{id}/restore-cart:
+    post:
+      tags:
+        - Orders
+      summary: Replace the current cart with items from a failed or closed order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    properties:
+                      restored:
+                        type: integer
+                    required:
+                      - restored
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  restored: 1
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /webhooks/maya:
+    post:
+      tags:
+        - Payments
+      summary: Accept a signed Maya payment event
+      security: []
+      parameters:
+        - in: header
+          name: X-Maya-Webhook-Timestamp
+          required: true
+          schema:
+            type: string
+          example: "1795341600000"
+        - in: header
+          name: X-Maya-Webhook-Signature
+          required: true
+          schema:
+            type: string
+          example: nonce=example,v1=SIGNATURE_FROM_MAYA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                requestReferenceNumber:
+                  type: string
+                paymentStatus:
+                  type: string
+                status:
+                  type: string
+                amount:
+                  type:
+                    - string
+                    - number
+                currency:
+                  type: string
+              required:
+                - id
+              additionalProperties: true
+            example:
+              id: 7f30701e-cd90-46c3-8961-723664f7b623
+              requestReferenceNumber: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+              paymentStatus: PAYMENT_SUCCESS
+              amount: 1424.1
+              currency: PHP
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    properties:
+                      accepted:
+                        type: boolean
+                      duplicate:
+                        type: boolean
+                      ignored:
+                        type: boolean
+                    required:
+                      - accepted
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  accepted: true
+                  duplicate: false
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Maya webhook verification failed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: INVALID_WEBHOOK_SIGNATURE
+                  message: Maya webhook verification failed.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /ai/discover:
+    post:
+      tags:
+        - Discovery
+      summary: Find catalog bags through Gemini
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  minLength: 5
+                  maxLength: 280
+              required:
+                - prompt
+            example:
+              prompt: A 14-inch laptop bag under PHP 1800
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Product"
+                      aiAssisted:
+                        type: boolean
+                    required:
+                      - products
+                      - aiAssisted
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  products:
+                    - id: everyday-tote
+                      name: The Everyday Tote
+                      description: Room for your plans, big and small.
+                      color: Caramel
+                      image: /images/tote.svg
+                      background: "#e9e2d7"
+                      price_cents: 129900
+                      stock: 8
+                      laptop_inches: 14
+                      monogram_cents: 15000
+                      active: true
+                      category: Totes
+                      category_id: totes
+                  aiAssisted: true
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "429":
+          description: Too many requests. Try again in a minute.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: RATE_LIMIT
+                  message: Too many requests. Try again in a minute.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "503":
+          description: Bag Finder is unavailable. Try the catalog search.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: AI_UNAVAILABLE
+                  message: Bag Finder is unavailable. Try the catalog search.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Read sales and stock totals
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: object
+                    properties:
+                      paid:
+                        type: integer
+                      gross:
+                        type: integer
+                      pending:
+                        type: integer
+                      flagged:
+                        type: integer
+                      webhookReview:
+                        type: integer
+                      lowStock:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            stock:
+                              type: integer
+                          required:
+                            - id
+                            - name
+                            - stock
+                    required:
+                      - paid
+                      - gross
+                      - pending
+                      - flagged
+                      - webhookReview
+                      - lowStock
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  paid: 1
+                  gross: 142410
+                  pending: 2
+                  flagged: 0
+                  webhookReview: 0
+                  lowStock:
+                    - id: mini-crossbody
+                      name: The Mini Crossbody
+                      stock: 1
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/products:
+    get:
+      tags:
+        - Admin
+      summary: List active and inactive products
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+        - in: query
+          name: q
+          schema:
+            default: ""
+            type: string
+            maxLength: 100
+          required: false
+        - in: query
+          name: category
+          schema:
+            type: string
+            maxLength: 64
+            pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+          required: false
+        - in: query
+          name: minPrice
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000000
+          required: false
+        - in: query
+          name: maxPrice
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000000
+          required: false
+        - in: query
+          name: laptop
+          schema:
+            type: number
+            minimum: 10
+            maximum: 20
+          required: false
+          description: Laptop screen size in inches. Only bags with a rated compartment at least this size are
+            returned.
+        - in: query
+          name: sort
+          schema:
+            default: featured
+            type: string
+            enum:
+              - featured
+              - newest
+              - price-asc
+              - price-desc
+          required: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: everyday-tote
+                    name: The Everyday Tote
+                    description: Room for your plans, big and small.
+                    color: Caramel
+                    image: /images/tote.svg
+                    background: "#e9e2d7"
+                    price_cents: 129900
+                    stock: 8
+                    laptop_inches: 14
+                    monogram_cents: 15000
+                    active: true
+                    category: Totes
+                    category_id: totes
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    post:
+      tags:
+        - Admin
+      summary: Create a catalog product
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                description:
+                  type: string
+                  minLength: 5
+                  maxLength: 600
+                color:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                image:
+                  type: string
+                  maxLength: 400
+                background:
+                  type: string
+                  pattern: ^#[0-9a-f]{6}$
+                category_id:
+                  type: string
+                  maxLength: 64
+                  pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+                price_cents:
+                  type: integer
+                  minimum: 100
+                  maximum: 10000000
+                stock:
+                  type: integer
+                  minimum: 0
+                  maximum: 100000
+                active:
+                  type: boolean
+                laptop_inches:
+                  anyOf:
+                    - type: number
+                      minimum: 10
+                      maximum: 20
+                      multipleOf: 0.1
+                    - type: "null"
+                monogram_cents:
+                  anyOf:
+                    - type: integer
+                      minimum: 100
+                      maximum: 10000000
+                    - type: "null"
+                id:
+                  type: string
+                  maxLength: 64
+                  pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+              required:
+                - name
+                - description
+                - color
+                - image
+                - background
+                - category_id
+                - price_cents
+                - stock
+                - active
+                - laptop_inches
+                - monogram_cents
+                - id
+            example:
+              id: metro-daypack
+              name: Metro Daypack
+              description: A compact work bag.
+              color: Forest
+              image: /images/backpack.svg
+              background: "#e6e9de"
+              category_id: backpacks
+              price_cents: 139900
+              stock: 6
+              laptop_inches: 14
+              monogram_cents: 12000
+              active: true
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Product"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: metro-daypack
+                  name: Metro Daypack
+                  description: A compact work bag.
+                  color: Forest
+                  image: /images/backpack.svg
+                  background: "#e6e9de"
+                  price_cents: 139900
+                  stock: 6
+                  laptop_inches: 14
+                  monogram_cents: 12000
+                  active: true
+                  category: Backpacks
+                  category_id: backpacks
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/products/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Update or deactivate a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: everyday-tote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                description:
+                  type: string
+                  minLength: 5
+                  maxLength: 600
+                color:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+                image:
+                  type: string
+                  maxLength: 400
+                background:
+                  type: string
+                  pattern: ^#[0-9a-f]{6}$
+                category_id:
+                  type: string
+                  maxLength: 64
+                  pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+                price_cents:
+                  type: integer
+                  minimum: 100
+                  maximum: 10000000
+                active:
+                  type: boolean
+                laptop_inches:
+                  anyOf:
+                    - type: number
+                      minimum: 10
+                      maximum: 20
+                      multipleOf: 0.1
+                    - type: "null"
+                monogram_cents:
+                  anyOf:
+                    - type: integer
+                      minimum: 100
+                      maximum: 10000000
+                    - type: "null"
+            example:
+              active: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Product"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: everyday-tote
+                  name: The Everyday Tote
+                  description: Room for your plans, big and small.
+                  color: Caramel
+                  image: /images/tote.svg
+                  background: "#e9e2d7"
+                  price_cents: 129900
+                  stock: 8
+                  laptop_inches: 14
+                  monogram_cents: 15000
+                  active: false
+                  category: Totes
+                  category_id: totes
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    delete:
+      tags:
+        - Admin
+      summary: Soft-delete a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: everyday-tote
+      responses:
+        "204":
+          description: Removed from the catalog.
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/products/{id}/stock:
+    patch:
+      tags:
+        - Admin
+      summary: Adjust available stock and record a reason
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: everyday-tote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock:
+                  type: integer
+                  minimum: 0
+                  maximum: 100000
+                reason:
+                  type: string
+                  minLength: 5
+                  maxLength: 200
+              required:
+                - stock
+                - reason
+            example:
+              stock: 12
+              reason: New shelf stock
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Product"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: everyday-tote
+                  name: The Everyday Tote
+                  description: Room for your plans, big and small.
+                  color: Caramel
+                  image: /images/tote.svg
+                  background: "#e9e2d7"
+                  price_cents: 129900
+                  stock: 12
+                  laptop_inches: 14
+                  monogram_cents: 15000
+                  active: true
+                  category: Totes
+                  category_id: totes
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    get:
+      tags:
+        - Admin
+      summary: Read a product’s stock audit trail
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: everyday-tote
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StockChange"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: 1
+                    product_id: everyday-tote
+                    old_stock: 8
+                    new_stock: 12
+                    reason: New shelf stock
+                    actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    created_at: 2026-11-22T10:00:00.000Z
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/categories:
+    get:
+      tags:
+        - Admin
+      summary: List all categories
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: totes
+                    name: Totes
+                    active: true
+                meta: {}
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    post:
+      tags:
+        - Admin
+      summary: Create a bag category
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                active:
+                  default: true
+                  type: boolean
+                id:
+                  type: string
+                  maxLength: 64
+                  pattern: ^[a-z0-9]+(?:-[a-z0-9]+)*$
+              required:
+                - name
+                - id
+            example:
+              id: pouches
+              name: Pouches
+              active: true
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Category"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: pouches
+                  name: Pouches
+                  active: true
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/categories/{id}:
+    put:
+      tags:
+        - Admin
+      summary: Update or deactivate a category
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: totes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                active:
+                  default: true
+                  type: boolean
+              required:
+                - name
+            example:
+              name: Totes
+              active: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Category"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: totes
+                  name: Totes
+                  active: false
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/coupons:
+    get:
+      tags:
+        - Admin
+      summary: List coupon rules
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Coupon"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - code: PACK100
+                    kind: fixed
+                    value: 10000
+                    minimum_cents: 120000
+                    expires_at: 2030-12-31T00:00:00Z
+                    max_uses: 20
+                    max_per_user: 1
+                    active: true
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+    post:
+      tags:
+        - Admin
+      summary: Create a coupon
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - percent
+                    - fixed
+                value:
+                  type: integer
+                  minimum: 1
+                  maximum: 10000000
+                minimum_cents:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000000
+                expires_at:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                max_uses:
+                  type: integer
+                  minimum: 1
+                  maximum: 100000
+                max_per_user:
+                  type: integer
+                  minimum: 1
+                  maximum: 100000
+                active:
+                  default: true
+                  type: boolean
+                couponCode:
+                  type: string
+                  pattern: ^[A-Z0-9-]{3,24}$
+              required:
+                - kind
+                - value
+                - minimum_cents
+                - expires_at
+                - max_uses
+                - max_per_user
+                - couponCode
+            example:
+              kind: fixed
+              value: 10000
+              minimum_cents: 120000
+              expires_at: 2030-12-31T00:00:00Z
+              max_uses: 20
+              max_per_user: 1
+              active: true
+              couponCode: METRO100
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Coupon"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  code: PACK100
+                  kind: fixed
+                  value: 10000
+                  minimum_cents: 120000
+                  expires_at: 2030-12-31T00:00:00Z
+                  max_uses: 20
+                  max_per_user: 1
+                  active: true
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: The request conflicts with the current state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: CONFLICT
+                  message: The request conflicts with the current state.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/coupons/{code}:
+    put:
+      tags:
+        - Admin
+      summary: Update or deactivate a coupon
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+          example: PACK100
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  enum:
+                    - percent
+                    - fixed
+                value:
+                  type: integer
+                  minimum: 1
+                  maximum: 10000000
+                minimum_cents:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000000
+                expires_at:
+                  type: string
+                  format: date-time
+                  pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+                max_uses:
+                  type: integer
+                  minimum: 1
+                  maximum: 100000
+                max_per_user:
+                  type: integer
+                  minimum: 1
+                  maximum: 100000
+                active:
+                  default: true
+                  type: boolean
+              required:
+                - kind
+                - value
+                - minimum_cents
+                - expires_at
+                - max_uses
+                - max_per_user
+            example:
+              kind: fixed
+              value: 10000
+              minimum_cents: 120000
+              expires_at: 2030-12-31T00:00:00Z
+              max_uses: 20
+              max_per_user: 1
+              active: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Coupon"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  code: PACK100
+                  kind: fixed
+                  value: 10000
+                  minimum_cents: 120000
+                  expires_at: 2030-12-31T00:00:00Z
+                  max_uses: 20
+                  max_per_user: 1
+                  active: false
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/orders:
+    get:
+      tags:
+        - Admin
+      summary: List all orders with status and date filters
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            default: 1
+            type: integer
+            minimum: 1
+            maximum: 10000
+          required: false
+        - in: query
+          name: limit
+          schema:
+            default: 12
+            type: integer
+            minimum: 1
+            maximum: 50
+          required: false
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending_payment
+              - paid
+              - processing
+              - shipped
+              - delivered
+              - cancelled
+              - expired
+              - failed
+          required: false
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          required: false
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+            pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))$
+          required: false
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OrderSummary"
+                  meta:
+                    $ref: "#/components/schemas/Pagination"
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  - id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                    total_cents: 142410
+                    currency: PHP
+                    status: pending_payment
+                    created_at: 2026-11-22T10:00:00.000Z
+                    payment_flag: null
+                meta:
+                  page: 1
+                  limit: 12
+                  total: 1
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /admin/orders/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Advance a paid order through fulfillment
+      description: The valid fulfillment transitions are paid to processing, processing to shipped, and shipped
+        to delivered. Maya alone confirms payment.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          example: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - pending_payment
+                    - paid
+                    - processing
+                    - shipped
+                    - delivered
+                    - cancelled
+                    - expired
+                    - failed
+              required:
+                - status
+            example:
+              status: processing
+      responses:
+        "200":
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    const: true
+                  data:
+                    $ref: "#/components/schemas/Order"
+                  meta:
+                    type: object
+                required:
+                  - success
+                  - data
+                  - meta
+              example:
+                success: true
+                data:
+                  id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  user_id: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                  total_cents: 142410
+                  currency: PHP
+                  status: processing
+                  created_at: 2026-11-22T10:00:00.000Z
+                  payment_flag: null
+                  subtotal_cents: 144900
+                  discount_cents: 14490
+                  shipping_cents: 12000
+                  shipping:
+                    name: Jamie Cruz
+                    phone: "09171234567"
+                    address: 123 Quezon Avenue
+                    city: Iligan City
+                    postalCode: "9200"
+                  coupon_code: CARRY10
+                  gateway_id: 7f30701e-cd90-46c3-8961-723664f7b623
+                  checkout_url: https://payments-web-sandbox.paymaya.com/checkout
+                  expires_at: 2026-11-22T11:10:00.000Z
+                  updated_at: 2026-11-22T10:00:00.000Z
+                  items:
+                    - product_id: everyday-tote
+                      name: The Everyday Tote
+                      image: /images/tote.svg
+                      quantity: 1
+                      monogram: JM
+                      unit_cents: 144900
+                      line_cents: 144900
+                  history:
+                    - status: pending_payment
+                      actor: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+                      created_at: 2026-11-22T10:00:00.000Z
+                  canRetry: false
+                meta: {}
+        "400":
+          description: The request body must be valid JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: MALFORMED_JSON
+                  message: The request body must be valid JSON.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "401":
+          description: Sign in to continue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: UNAUTHENTICATED
+                  message: Sign in to continue.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "403":
+          description: Administrator access is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: Administrator access is required.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "404":
+          description: This item could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: NOT_FOUND
+                  message: This item could not be found.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "409":
+          description: This order cannot move to that status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: ILLEGAL_ORDER_STATE
+                  message: This order cannot move to that status.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "413":
+          description: The request body is too large.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: REQUEST_TOO_LARGE
+                  message: The request body is too large.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "422":
+          description: Check the indicated fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: VALIDATION
+                  message: Check the indicated fields.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+        "500":
+          description: Something went wrong. Try again shortly.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                success: false
+                error:
+                  code: SERVER_ERROR
+                  message: Something went wrong. Try again shortly.
+                requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - customer
+            - admin
+      required:
+        - id
+        - name
+        - email
+        - role
+    Session:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        color:
+          type: string
+        image:
+          type: string
+        background:
+          type: string
+        price_cents:
+          type: integer
+        stock:
+          type: integer
+        laptop_inches:
+          anyOf:
+            - type: number
+            - type: "null"
+        monogram_cents:
+          anyOf:
+            - type: integer
+            - type: "null"
+        active:
+          type: boolean
+        category:
+          type: string
+        category_id:
+          type: string
+      required:
+        - id
+        - name
+        - description
+        - color
+        - image
+        - background
+        - price_cents
+        - stock
+        - laptop_inches
+        - monogram_cents
+        - active
+        - category
+        - category_id
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+      required:
+        - id
+        - name
+        - active
+    CartLine:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            quantity:
+              type: integer
+            monogram:
+              type: string
+            available:
+              type: boolean
+            unit_cents:
+              type: integer
+            line_cents:
+              type: integer
+          required:
+            - quantity
+            - monogram
+            - available
+            - unit_cents
+            - line_cents
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartLine"
+        subtotal_cents:
+          type: integer
+        currency:
+          const: PHP
+      required:
+        - items
+        - subtotal_cents
+        - currency
+    Coupon:
+      type: object
+      properties:
+        code:
+          type: string
+        kind:
+          type: string
+          enum:
+            - percent
+            - fixed
+        value:
+          type: integer
+          minimum: 1
+          maximum: 10000000
+        minimum_cents:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+        expires_at:
+          type: string
+          format: date-time
+          pattern: ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+        max_uses:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        max_per_user:
+          type: integer
+          minimum: 1
+          maximum: 100000
+        active:
+          default: true
+          type: boolean
+      required:
+        - code
+        - kind
+        - value
+        - minimum_cents
+        - expires_at
+        - max_uses
+        - max_per_user
+        - active
+    MoneySummary:
+      type: object
+      properties:
+        subtotal_cents:
+          type: integer
+        discount_cents:
+          type: integer
+        shipping_cents:
+          type: integer
+        total_cents:
+          type: integer
+        currency:
+          const: PHP
+      required:
+        - subtotal_cents
+        - discount_cents
+        - shipping_cents
+        - total_cents
+        - currency
+    Quote:
+      allOf:
+        - $ref: "#/components/schemas/MoneySummary"
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CartLine"
+          required:
+            - items
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        user_id:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+        status:
+          enum:
+            - pending_payment
+            - paid
+            - processing
+            - shipped
+            - delivered
+            - cancelled
+            - expired
+            - failed
+        total_cents:
+          type: integer
+        currency:
+          const: PHP
+        created_at:
+          type: string
+          format: date-time
+        payment_flag:
+          anyOf:
+            - type: object
+              additionalProperties: true
+            - type: "null"
+      required:
+        - id
+        - user_id
+        - status
+        - total_cents
+        - currency
+        - created_at
+        - payment_flag
+    OrderLine:
+      type: object
+      properties:
+        product_id:
+          type: string
+        name:
+          type: string
+        image:
+          type: string
+        quantity:
+          type: integer
+        monogram:
+          type: string
+        unit_cents:
+          type: integer
+        line_cents:
+          type: integer
+      required:
+        - product_id
+        - name
+        - image
+        - quantity
+        - monogram
+        - unit_cents
+        - line_cents
+    HistoryLine:
+      type: object
+      properties:
+        status:
+          enum:
+            - pending_payment
+            - paid
+            - processing
+            - shipped
+            - delivered
+            - cancelled
+            - expired
+            - failed
+        actor:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - status
+        - actor
+        - created_at
+    Order:
+      allOf:
+        - $ref: "#/components/schemas/OrderSummary"
+        - $ref: "#/components/schemas/MoneySummary"
+        - type: object
+          properties:
+            shipping:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                phone:
+                  type: string
+                  pattern: ^(?:\+63|0)9\d{9}$
+                address:
+                  type: string
+                  minLength: 8
+                  maxLength: 180
+                city:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                postalCode:
+                  type: string
+                  pattern: ^\d{4}$
+              required:
+                - name
+                - phone
+                - address
+                - city
+                - postalCode
+            coupon_code:
+              anyOf:
+                - type: string
+                - type: "null"
+            gateway_id:
+              anyOf:
+                - type: string
+                  format: uuid
+                  pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+                - type: "null"
+            checkout_url:
+              anyOf:
+                - type: string
+                  format: uri
+                - type: "null"
+            expires_at:
+              type: string
+              format: date-time
+            updated_at:
+              type: string
+              format: date-time
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/OrderLine"
+            history:
+              type: array
+              items:
+                $ref: "#/components/schemas/HistoryLine"
+            canRetry:
+              type: boolean
+          required:
+            - shipping
+            - coupon_code
+            - gateway_id
+            - checkout_url
+            - expires_at
+            - updated_at
+            - items
+            - history
+            - canRetry
+    StockChange:
+      type: object
+      properties:
+        id:
+          type:
+            - integer
+            - string
+        product_id:
+          type: string
+        old_stock:
+          type: integer
+        new_stock:
+          type: integer
+        reason:
+          type: string
+        actor:
+          anyOf:
+            - type: string
+              format: uuid
+              pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+            - type: "null"
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - product_id
+        - old_stock
+        - new_stock
+        - reason
+        - actor
+        - created_at
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+      required:
+        - page
+        - limit
+        - total
+    Error:
+      type: object
+      properties:
+        success:
+          const: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+          required:
+            - code
+            - message
+        requestId:
+          type: string
+          format: uuid
+          pattern: ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+      required:
+        - success
+        - error
+        - requestId

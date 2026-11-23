@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#e8d9bf"/><stop offset=".5" stop-color="#d2c0a2"/><stop offset="1" stop-color="#b4a080"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#b4a080"/><stop offset="1" stop-color="#d2c0a2"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#b4a080"/><stop offset=".45" stop-color="#e8d9bf"/><stop offset="1" stop-color="#b4a080"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M197 317q-56-238 76-243 143-5 127 249" fill="none" stroke="#9a8464" stroke-width="13"/><path d="M197 317q-56-238 76-243 143-5 127 249" fill="none" stroke="#e4d2b6" stroke-width="8"/>
+<rect x="172" y="279" width="263" height="156" rx="32" fill="url(#side)"/><rect x="160" y="274" width="260" height="155" rx="27" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M160 295q4-21 26-21h208q21 3 26 22l-11 57q-118 25-238 0Z" fill="#cbb694"/><path d="M174 292h232l-9 50q-103 20-215 0Z" fill="none" stroke="#f5e8cc" stroke-dasharray="3 3"/>
+<rect x="277" y="336" width="29" height="38" rx="3" fill="#8b7654"/><rect x="282" y="342" width="19" height="17" rx="3" fill="#d2bd83"/>
+<path d="m165 289-14-2m268 2 16-2" stroke="#c2a568" stroke-width="9"/>
+<text x="290" y="400" fill="#846f50" font-family="Georgia,serif" font-size="9" text-anchor="middle" letter-spacing="1">CARRY &amp; CO.</text></g></svg>

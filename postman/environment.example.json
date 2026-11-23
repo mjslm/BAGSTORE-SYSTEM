@@ -1,0 +1,78 @@
+{
+  "name": "Carry & Co. Local Sandbox",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "customerEmail",
+      "value": "jamie@carry.test",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@carry.test",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "customerPassword",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "adminPassword",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "enabled": true,
+      "type": "secret"
+    },
+    {
+      "key": "orderId",
+      "value": "4f6e5173-87d0-43fc-b36e-c0a15b04c654",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "checkoutKey",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "newEmail",
+      "value": "",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "sandboxConfigured",
+      "value": "false",
+      "enabled": true,
+      "type": "default"
+    },
+    {
+      "key": "aiConfigured",
+      "value": "false",
+      "enabled": true,
+      "type": "default"
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#a47b60"/><stop offset=".5" stop-color="#825d47"/><stop offset="1" stop-color="#60402f"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#60402f"/><stop offset="1" stop-color="#825d47"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#60402f"/><stop offset=".45" stop-color="#a47b60"/><stop offset="1" stop-color="#60402f"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M171 286q-48-187 115-181 177-1 132 179" fill="none" stroke="#593b2b" stroke-width="14"/>
+<path d="M154 268q155-64 293 0l37 139q3 35-32 40H150q-35-4-30-40Z" fill="url(#side)"/>
+<path d="M161 259q139-35 260 0l17 174q-161 16-309-2Z" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M161 259q141-29 260 0" fill="none" stroke="#d4bb8d" stroke-width="3"/><path d="M179 257q114-24 224 0" fill="none" stroke="#412b21" stroke-width="2"/>
+<path d="M223 431V244q0-90 67-90t67 90v189" fill="none" stroke="#4b3327" stroke-width="17"/><path d="M223 431V244q0-90 67-90t67 90v189" fill="none" stroke="url(#handle)" stroke-width="10"/>
+<path d="M138 410q147 20 292 0" stroke="#b79a77" stroke-width="1" stroke-dasharray="3 3" fill="none"/>
+<path d="m148 284-17 15m309-12 20 17" stroke="#c5ab73" stroke-width="7"/>
+<text x="290" y="335" fill="#cbb28e" font-family="Georgia,serif" font-size="10" text-anchor="middle" letter-spacing="1">CARRY &amp; CO.</text></g></svg>

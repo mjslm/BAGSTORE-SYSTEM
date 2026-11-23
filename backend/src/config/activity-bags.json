@@ -1,0 +1,78 @@
+{
+  "store": "Carry & Co.",
+  "currency": "PHP",
+  "products": [
+    {
+      "id": "everyday-tote",
+      "name": "The Everyday Tote",
+      "category": "Totes",
+      "price": 1299,
+      "color": "Caramel",
+      "swatch": "#ab7146",
+      "background": "#e9e2d7",
+      "tag": "THE EVERYDAY FAVORITE",
+      "description": "Room for your plans, big and small.",
+      "image": "/images/tote.svg"
+    },
+    {
+      "id": "city-backpack",
+      "name": "The City Backpack",
+      "category": "Backpacks",
+      "price": 1599,
+      "color": "Forest",
+      "swatch": "#4b5d49",
+      "background": "#e6e9de",
+      "tag": "GO HANDS FREE",
+      "description": "From your first class to your last stop.",
+      "image": "/images/backpack.svg"
+    },
+    {
+      "id": "mini-crossbody",
+      "name": "The Mini Crossbody",
+      "category": "Crossbody",
+      "price": 899,
+      "color": "Oat",
+      "swatch": "#cdbca1",
+      "background": "#ece8df",
+      "tag": "LESS IS LOVELY",
+      "description": "Just the essentials. Nothing extra.",
+      "image": "/images/crossbody.svg"
+    },
+    {
+      "id": "weekender",
+      "name": "The Weekender",
+      "category": "Travel",
+      "price": 1899,
+      "color": "Cocoa",
+      "swatch": "#79533f",
+      "background": "#e6ded6",
+      "tag": "OUT OF OFFICE",
+      "description": "A little escape starts right here.",
+      "image": "/images/weekender.svg"
+    },
+    {
+      "id": "crescent",
+      "name": "The Crescent Bag",
+      "category": "Shoulder bags",
+      "price": 1199,
+      "color": "Merlot",
+      "swatch": "#7b4546",
+      "background": "#eee2df",
+      "tag": "A SOFTER SHAPE",
+      "description": "An easy curve for unhurried days.",
+      "image": "/images/crescent.svg"
+    },
+    {
+      "id": "canvas-tote",
+      "name": "The Daily Canvas",
+      "category": "Totes",
+      "price": 699,
+      "color": "Natural",
+      "swatch": "#c8bd9f",
+      "background": "#e9e8dc",
+      "tag": "KEEP IT SIMPLE",
+      "description": "Your books, your errands, your everyday.",
+      "image": "/images/canvas.svg"
+    }
+  ]
+}

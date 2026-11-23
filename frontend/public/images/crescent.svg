@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#a66b69"/><stop offset=".5" stop-color="#875153"/><stop offset="1" stop-color="#6b3c40"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#6b3c40"/><stop offset="1" stop-color="#875153"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#6b3c40"/><stop offset=".45" stop-color="#a66b69"/><stop offset="1" stop-color="#6b3c40"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M176 294q-7-197 111-209 136-6 146 209" fill="none" stroke="#603b3c" stroke-width="22"/><path d="M176 294q-7-197 111-209 136-6 146 209" fill="none" stroke="url(#handle)" stroke-width="15"/>
+<path d="M151 275q149 55 300-1l-18 92q-23 85-129 91-110-4-138-86Z" fill="url(#side)"/>
+<path d="M147 270q141 56 286 0l-17 94q-24 79-124 84-104-5-130-83Z" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M161 286q133 50 257 0l-13 74q-22 72-114 77-95-7-119-77Z" fill="none" stroke="#c5958e" stroke-width="1.2" stroke-dasharray="3 3"/>
+<path d="M149 271q141 54 284 0" fill="none" stroke="#c3a577" stroke-width="3"/><path d="m405 280 3 18" stroke="#ccb482" stroke-width="4"/>
+<path d="m170 277 5 25m247-29-5 23" stroke="#c8aa79" stroke-width="7"/>
+<text x="293" y="374" fill="#e1b9a4" font-family="Georgia,serif" font-size="10" text-anchor="middle" letter-spacing="1">CARRY &amp; CO.</text></g></svg>

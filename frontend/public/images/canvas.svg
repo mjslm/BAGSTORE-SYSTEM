@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="550" viewBox="0 0 600 550">
+ <defs>
+ <linearGradient id="leather" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#dfd5b8"/><stop offset=".5" stop-color="#c5b99a"/><stop offset="1" stop-color="#ada183"/></linearGradient>
+ <linearGradient id="side"><stop stop-color="#ada183"/><stop offset="1" stop-color="#c5b99a"/></linearGradient>
+ <linearGradient id="handle"><stop stop-color="#ada183"/><stop offset=".45" stop-color="#dfd5b8"/><stop offset="1" stop-color="#ada183"/></linearGradient>
+ <radialGradient id="shadow"><stop stop-color="#302418" stop-opacity=".22"/><stop offset="1" stop-color="#302418" stop-opacity="0"/></radialGradient>
+ <filter id="texture"><feTurbulence baseFrequency=".7" numOctaves="3" seed="8" result="noise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".055"/></feComponentTransfer><feBlend in="SourceGraphic" mode="multiply"/></filter>
+ </defs>
+ <ellipse cx="310" cy="457" rx="190" ry="32" fill="url(#shadow)"/>
+ <g><path d="M227 234V139q0-56 66-56t66 56v95" fill="none" stroke="#8d8567" stroke-width="23"/><path d="M227 234V139q0-56 66-56t66 56v95" fill="none" stroke="#b7ab8c" stroke-width="16"/>
+<path d="M156 215h291l-18 224q-136 29-278 0Z" fill="url(#side)"/><path d="M150 211q133 13 270 0l-8 226q-131 19-263 0Z" fill="url(#leather)" filter="url(#texture)"/>
+<path d="M156 226q126 15 257 0m-256 9q122 13 255 0" fill="none" stroke="#8e876b" opacity=".5" stroke-width="1.5"/>
+<path d="M216 269V139q0-56 66-56t66 56v130" fill="none" stroke="#c6ba98" stroke-width="19"/>
+<path d="M209 239v35h14v-35m118 0v35h14v-35" fill="none" stroke="#9d9271" stroke-dasharray="3 2" stroke-width="1"/>
+<path d="M157 253v174q121 18 247 0V252" fill="none" stroke="#9e9474" stroke-dasharray="3 3" stroke-width="1.3"/>
+<text x="282" y="337" fill="#526348" font-family="Georgia,serif" font-size="25" text-anchor="middle">carry &amp; co.</text><text x="282" y="359" fill="#7f8668" font-family="Arial,sans-serif" font-size="8" text-anchor="middle" letter-spacing="2">FOR YOUR EVERYDAY</text></g></svg>

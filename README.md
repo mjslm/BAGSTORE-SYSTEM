@@ -4,35 +4,46 @@ Mobile React PWA and Express REST API. Customers can check laptop fit, add monog
 
 ## Run in VS Code
 
-Use Node.js 22.12 or later. Extract the ZIP and open the folder containing `backend` and `frontend`.
+Use Node.js 22.12 or later. Open the folder containing `backend` and `frontend` in VS Code.
 
-In a PowerShell terminal at the project root:
+### First-time backend setup
+
+From the project root, install the backend dependencies, create the local `.env` if needed, and generate a JWT secret.
 
 ```powershell
 cd backend
 npm.cmd ci
-Copy-Item .env.example .env
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+node -p "require('node:crypto').randomBytes(48).toString('hex')"
 ```
 
-Copy that random value into `JWT_SECRET` in `backend/.env`. In your Supabase project, open **Connect → Direct → Session pooler**. Set `DATABASE_URL` in `backend/.env` to the connection string with your database password. Set `SEED_ADMIN_PASSWORD` and `SEED_CUSTOMER_PASSWORD` to private passwords of 12–72 bytes. Then run:
+1. Paste the random value into `JWT_SECRET` in `backend/.env`. Keep `FRONTEND_URL=http://localhost:5173` for local development.
+2. In Supabase, open **Connect** and copy the **Session pooler** connection string. Put it in `DATABASE_URL` with your URL-encoded database password. Add `?sslmode=verify-full&sslrootcert=supabase-ca.crt` after `/postgres`. If the connection string already has an `sslmode` parameter, replace it. The public certificate is in the `backend` folder. [Supabase connection guide](https://supabase.com/docs/guides/database/psql)
+3. For a **new demo database**, set `SEED_ADMIN_PASSWORD` and `SEED_CUSTOMER_PASSWORD` to private passwords of 12–72 bytes. Run `npm.cmd run seed` once from `backend`. Repeat runs add missing demo records. Existing accounts keep their current passwords.
+
+Keep `backend/.env` private and use `.env.example` as the template shared with the project.
+
+### Start the app
+
+Open two PowerShell terminals at the project root. In the first, start the API.
 
 ```powershell
-npm.cmd run seed
+cd backend
 npm.cmd run dev
 ```
 
-Open a second terminal at the project root:
+In the second, start the storefront. Run `npm.cmd ci` from `frontend` before its first launch.
 
 ```powershell
 cd frontend
-npm.cmd ci
 npm.cmd run dev
 ```
 
-Open http://localhost:5173. Swagger is at http://localhost:4000/api-docs. For a service-worker test, run `npm.cmd run build` and `npm.cmd run preview` inside `frontend/`, then visit http://localhost:4173.
+Open the [storefront](http://localhost:5173), [API health check](http://localhost:4000/api/v1/health), or [Swagger UI](http://localhost:4000/api-docs).
 
-The API stores data in your configured Supabase database. Run `npm.cmd run seed` once to create the demo accounts. Repeat runs add missing demo records, and existing accounts retain their passwords.
+To test the production service worker locally, keep the API running and run `npm.cmd run build` followed by `npm.cmd run preview` from `frontend`. Open the [production preview](http://localhost:4173).
+
+### Demo accounts
 
 | Account | Email | Password |
 | --- | --- | --- |
@@ -44,11 +55,29 @@ Try `CARRY10` for 10% off qualifying orders, `PACK100` for ₱100 off qualifying
 
 ## Maya Sandbox and Bag Finder
 
-- Set `MAYA_PUBLIC_KEY` and `MAYA_SECRET_KEY` using your Maya Sandbox credentials. Register the public HTTPS API endpoint `/api/v1/webhooks/maya` for `PAYMENT_SUCCESS`, `PAYMENT_FAILED`, `PAYMENT_CANCELLED`, and `PAYMENT_EXPIRED`. Configure at least one Maya Sandbox webhook signing public key using `MAYA_WEBHOOK_PUBLIC_KEY_1`. Use `MAYA_WEBHOOK_PUBLIC_KEY_2` if Maya supplies a second key for rotation. A PEM can be entered on one line using literal \n between its lines. See [Maya Checkout](https://developers.maya.ph/reference/accept-one-time-payment-using-maya-checkout) and [Maya webhook security](https://developers.maya.ph/reference/webhook-security).
+- Set `MAYA_PUBLIC_KEY` and `MAYA_SECRET_KEY` using your Maya Sandbox credentials. Register your API's public HTTPS URL ending in `/api/v1/webhooks/maya` for `PAYMENT_SUCCESS`, `PAYMENT_FAILED`, `PAYMENT_CANCELLED`, and `PAYMENT_EXPIRED`. Set `MAYA_WEBHOOK_PUBLIC_KEY_1` and `MAYA_WEBHOOK_PUBLIC_KEY_2` to the Sandbox signing keys. The app accepts each key as a single line of Base64 or as a PEM with literal `\n` between its lines. [Maya Checkout webhook guide](https://developers.maya.ph/reference/configuring-your-webhook-for-maya-checkout)
 - Set `GEMINI_API_KEY` in the backend environment. `GEMINI_MODEL` defaults to `gemini-3.1-flash-lite`. Without credentials, the corresponding service returns a controlled 503, and the catalog remains usable.
 
-## Tests and deployment
+## Tests
 
-For backend integration tests, set `TEST_DATABASE_URL` in your terminal to a PostgreSQL connection with permission to create a schema, then run `npm.cmd test` from `backend/`. Tests create and clean up a unique schema and exercise Express over HTTP with controlled provider responses. Import the JSON files in `postman/` for interactive API tests. Fill the two password variables with the passwords you used to seed the accounts. A future breaking change would use a separate `/api/v2` router while maintaining the existing v1 contract.
+For backend integration tests, set `TEST_DATABASE_URL` in your terminal to a test PostgreSQL database with permission to create a schema. Run `npm.cmd test` from `backend`. The suite creates and removes its own test schema and uses controlled provider responses.
 
-For deployment, use a PostgreSQL connection string in `DATABASE_URL` and set `NODE_ENV=production`. Set individual test-only `SEED_ADMIN_PASSWORD` and `SEED_CUSTOMER_PASSWORD`, then run `npm run seed` on the backend host. Start the backend with `npm start`. Set `FRONTEND_URL` to the Vercel HTTPS origin and set `TRUST_PROXY_HOPS` to the correct proxy count for your host if needed. Deploy `frontend/` from the same repository as a Vite project and set its `VITE_API_BASE_URL` to the hosted HTTPS backend URL plus `/api/v1`.
+For manual API tests, import `postman/collection.json` and `postman/environment.example.json`. Set `customerPassword` and `adminPassword` to your demo account passwords.
+
+## Deploy on Vercel and Render
+
+Use this GitHub repository for both deployments and your existing Supabase project for the database. If you use a new database for the demo, point your local backend at that database and run `npm.cmd run seed` from `backend` before deploying.
+
+| Setting | Vercel storefront | Render API |
+| --- | --- | --- |
+| Root directory | `frontend` | `backend` |
+| Framework or runtime | Vite | Node |
+| Build command | `npm run build` | `npm ci` |
+| Output directory | `dist` | |
+| Start command | | `npm start` |
+| Health check path | | `/api/v1/health` |
+
+1. Deploy the frontend on Vercel first to get its production HTTPS URL. [Vercel root directory setup](https://vercel.com/docs/monorepos)
+2. Create a Render **Web Service**. Set `NODE_ENV=production`, set `FRONTEND_URL` to the Vercel HTTPS origin, and add `DATABASE_URL` with the same certificate options used locally. Set `JWT_SECRET` and the Maya and Gemini settings in Render's environment. Render supplies `PORT`. If the database already has the demo accounts and catalog, skip seeding. Open the Render URL with `/api/v1/health` appended and check for `"status":"ok"`. [Render Express setup](https://render.com/docs/deploy-node-express-app)
+3. In Vercel, set `VITE_API_BASE_URL` to the Render HTTPS URL followed by `/api/v1`. Redeploy the storefront to apply the value. [Vercel environment variables](https://vercel.com/docs/environment-variables)
+4. Open the Vercel URL and check the catalog, sign-in, and Bag Finder. Register the Maya Sandbox webhook and verify that a test order reaches **Paid**.

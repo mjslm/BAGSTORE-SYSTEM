@@ -2,6 +2,15 @@
 
 Mobile React PWA and Express REST API. Customers can check laptop fit, add monograms on eligible bags, apply coupons, and track Maya Sandbox orders.
 
+## Live deployment
+
+| Service | URL |
+| --- | --- |
+| Storefront on Vercel | [carry-and-co.vercel.app](https://carry-and-co.vercel.app/) |
+| API reference on Render | [carry-and-co-api.onrender.com/api-docs](https://carry-and-co-api.onrender.com/api-docs) |
+
+The deployed API base URL is `https://carry-and-co-api.onrender.com/api/v1`. [Check API health](https://carry-and-co-api.onrender.com/api/v1/health).
+
 ## Run in VS Code
 
 Use Node.js 22.12 or later. Open the folder containing `backend` and `frontend` in VS Code.

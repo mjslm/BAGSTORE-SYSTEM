@@ -7,6 +7,7 @@ Mobile React PWA and Express REST API. Customers can check laptop fit, add monog
 | Service | URL |
 | --- | --- |
 | Storefront on Vercel | [carry-and-co.vercel.app](https://carry-and-co.vercel.app/) |
+| Backend on Render | [**carry-and-co-api**](https://carry-and-co-api.onrender.com/) |
 | API reference on Render | [carry-and-co-api.onrender.com/api-docs](https://carry-and-co-api.onrender.com/api-docs) |
 
 The deployed API base URL is `https://carry-and-co-api.onrender.com/api/v1`. [Check API health](https://carry-and-co-api.onrender.com/api/v1/health).

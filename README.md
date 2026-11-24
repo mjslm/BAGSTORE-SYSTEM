@@ -12,6 +12,18 @@ Mobile React PWA and Express REST API. Customers can check laptop fit, add monog
 
 The deployed API base URL is `https://carry-and-co-api.onrender.com/api/v1`. [Check API health](https://carry-and-co-api.onrender.com/api/v1/health).
 
+## Project structure
+
+| Folder | What's inside |
+| --- | --- |
+| `frontend/src/` | React pages and components, auth and cart context, and the shared API client in `api/` |
+| `backend/src/` | Express routes and controllers, middleware and validators, business services, and payment and discount patterns |
+| `backend/src/repositories/` and `backend/src/config/schema.sql` | PostgreSQL queries and table definitions |
+| `backend/tests/` and `backend/openapi.yaml` | Integration tests and the OpenAPI specification |
+| `postman/` | API test collection and a shareable environment template |
+
+The Vercel storefront calls the Render API over HTTPS with JSON and uses a bearer token for signed-in requests. Express connects to Supabase PostgreSQL, calls Gemini for Bag Finder, and creates Maya Sandbox checkouts. Maya sends signed payment events back to the Render webhook at `/api/v1/webhooks/maya`. Express verifies the events before updating order records.
+
 ## Run in VS Code
 
 Use Node.js 22.12 or later. Open the folder containing `backend` and `frontend` in VS Code.
@@ -42,10 +54,11 @@ cd backend
 npm.cmd run dev
 ```
 
-In the second, start the storefront. Run `npm.cmd ci` from `frontend` before its first launch.
+In the second, start the storefront. Run `npm.cmd ci` on the first setup or after the lockfile changes.
 
 ```powershell
 cd frontend
+npm.cmd ci
 npm.cmd run dev
 ```
 
@@ -70,9 +83,11 @@ Try `CARRY10` for 10% off qualifying orders, `PACK100` for ₱100 off qualifying
 
 ## Tests
 
+See the [test plan](docs/test-plan.md) for the Postman demo cases, expected results, and previous test runs.
+
 For backend integration tests, set `TEST_DATABASE_URL` in your terminal to a test PostgreSQL database with permission to create a schema. Run `npm.cmd test` from `backend`. The suite creates and removes its own test schema and uses controlled provider responses.
 
-For manual API tests, import `postman/collection.json` and `postman/environment.example.json`. Set `customerPassword` and `adminPassword` to your demo account passwords.
+For manual API tests, import `postman/collection.json` and `postman/environment.example.json`. Point `baseUrl` to your test API and set `customerPassword` and `adminPassword` to the passwords used to seed that test database. Run the full collection against a disposable, seeded database because it creates orders and changes inventory.
 
 ## Deploy on Vercel and Render
 
@@ -91,3 +106,10 @@ Use this GitHub repository for both deployments and your existing Supabase proje
 2. Create a Render **Web Service**. Set `NODE_ENV=production`, set `FRONTEND_URL` to the Vercel HTTPS origin, and add `DATABASE_URL` with the same certificate options used locally. Set `JWT_SECRET` and the Maya and Gemini settings in Render's environment. Render supplies `PORT`. If the database already has the demo accounts and catalog, skip seeding. Open the Render URL with `/api/v1/health` appended and check for `"status":"ok"`. [Render Express setup](https://render.com/docs/deploy-node-express-app)
 3. In Vercel, set `VITE_API_BASE_URL` to the Render HTTPS URL followed by `/api/v1`. Redeploy the storefront to apply the value. [Vercel environment variables](https://vercel.com/docs/environment-variables)
 4. Open the Vercel URL and check the catalog, sign-in, and Bag Finder. Register the Maya Sandbox webhook and verify that a test order reaches **Paid**.
+
+## Submission and defense
+
+- Use the [demo checklist](docs/demo-checklist.md) for the presentation order and the [integration notes](docs/integration-notes.md) when explaining Gemini and Maya Sandbox.
+- Name the archive `ITPE101_FINAL_<SECTION>_CARRYANDCO.zip` using your actual section or the name your instructor assigns. Include both `package-lock.json` files and both `.env.example` templates. Exclude `node_modules`, `dist`, `.env` files with real values, and local database data.
+- Extract the archive to a fresh folder and follow the setup steps above with a demo database. Check the storefront, Swagger, and Postman before presenting.
+- Keep a backup screen recording in case the internet or a hosting service is unavailable. Use demo accounts and Maya Sandbox test cards, and keep personal data and credentials out of the recording.

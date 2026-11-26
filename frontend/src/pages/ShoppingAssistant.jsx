@@ -62,39 +62,41 @@ export default function ShoppingAssistant() {
     }
   }
 
-  return <section className="content narrow assistant-page">
+  return <section className="content">
     <div className="page-heading">
       <p className="eyebrow"><Icon name="sparkle" size={17} /> AI-Assisted</p>
       <h1>Shopping Assistant</h1>
       <p>Ask about bag features, laptop fit, monograms, and our store.</p>
     </div>
     <AiNavigation />
-    {!turns.length && <div className="summary-card assistant-examples">
-      <h2>What can I help you find?</h2>
-      <div className="example-questions">{examples.map((question) =>
-        <button key={question} className="button subtle" type="button" disabled={busy || !online} onClick={() => { setPrompt(question); input.current?.focus(); }}>{question}</button>)}</div>
-    </div>}
-    <div className="chat-history" role="log" aria-label="Shopping conversation" aria-live="polite" aria-busy={busy}>
-      {turns.map((turn, index) => <div key={index} className="chat-turn" ref={index === turns.length - 1 ? lastReply : null}>
-        <p className="chat-question">{turn.question}</p>
-        <article className="chat-answer">
-          <p className="ai-reply-label"><Icon name="sparkle" size={17} />{turn.aiAssisted ? 'Shopping Assistant' : 'Catalog help'}</p>
-          <p className="chat-text">{turn.answer}</p>
-          <RelatedBags products={turn.products} />
-          {!turn.aiAssisted && <Link className="text-link" to="/products">Browse the catalog</Link>}
-        </article>
-      </div>)}
-      {busy && <p className="feedback" role="status">Checking available bag details…</p>}
-    </div>
-    <form className="summary-card form-stack assistant-form" onSubmit={submit}>
-      <label htmlFor="assistant-question">Your question</label>
-      <textarea id="assistant-question" ref={input} value={prompt} onChange={(event) => setPrompt(event.target.value)}
-        minLength={5} maxLength={500} rows={3} required placeholder="Does the Desk to Dinner Tote fit my laptop?" disabled={busy || !online} />
-      <ErrorBox error={error} />
-      <div className="section-title">
-        {turns.length ? <button className="text-link" type="button" disabled={busy} onClick={() => { setTurns([]); setPrompt(''); setError(null); }}>Clear chat</button> : <small>{prompt.length}/500</small>}
-        <button className="button" disabled={busy || !online || prompt.trim().length < 5}>{!online ? 'Assistant is offline' : busy ? 'Thinking…' : 'Send question'}</button>
+    <div className="assistant-panel">
+      {!turns.length && <div className="summary-card assistant-examples">
+        <h2>What can I help you find?</h2>
+        <div className="example-questions">{examples.map((question) =>
+          <button key={question} className="button subtle" type="button" disabled={busy || !online} onClick={() => { setPrompt(question); input.current?.focus(); }}>{question}</button>)}</div>
+      </div>}
+      <div className="chat-history" role="log" aria-label="Shopping conversation" aria-live="polite" aria-busy={busy}>
+        {turns.map((turn, index) => <div key={index} className="chat-turn" ref={index === turns.length - 1 ? lastReply : null}>
+          <p className="chat-question">{turn.question}</p>
+          <article className="chat-answer">
+            <p className="ai-reply-label"><Icon name="sparkle" size={17} />{turn.aiAssisted ? 'Shopping Assistant' : 'Catalog help'}</p>
+            <p className="chat-text">{turn.answer}</p>
+            <RelatedBags products={turn.products} />
+            {!turn.aiAssisted && <Link className="text-link" to="/products">Browse the catalog</Link>}
+          </article>
+        </div>)}
+        {busy && <p className="feedback" role="status">Checking available bag details…</p>}
       </div>
-    </form>
+      <form className="summary-card form-stack assistant-form" onSubmit={submit}>
+        <label htmlFor="assistant-question">Your question</label>
+        <textarea id="assistant-question" ref={input} value={prompt} onChange={(event) => setPrompt(event.target.value)}
+          minLength={5} maxLength={500} rows={3} required placeholder="Does the Desk to Dinner Tote fit my laptop?" disabled={busy || !online} />
+        <ErrorBox error={error} />
+        <div className="section-title">
+          {turns.length ? <button className="text-link" type="button" disabled={busy} onClick={() => { setTurns([]); setPrompt(''); setError(null); }}>Clear chat</button> : <small>{prompt.length}/500</small>}
+          <button className="button" disabled={busy || !online || prompt.trim().length < 5}>{!online ? 'Assistant is offline' : busy ? 'Thinking…' : 'Send question'}</button>
+        </div>
+      </form>
+    </div>
   </section>;
 }

@@ -341,3 +341,14 @@ input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; accent-col
 .advisor-status.restock { background: #f5e4bd; color: #503b22; }
 .advisor-status.review { background: var(--sage); }
 @media (min-width: 700px) { .advisor-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* Visual Bag Search */
+.visual-search-form { max-width: 640px; display: grid; gap: 12px; }
+.photo-input { position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; padding: 0; overflow: hidden; }
+.photo-input:focus-visible + .photo-preview { outline: 3px solid #9a5636; outline-offset: 3px; }
+.photo-preview { min-width: 0; min-height: 180px; display: grid; place-items: center; overflow: hidden; border: 1px dashed #aab5a7; border-radius: 5px; background: #eeede4; }
+.photo-preview img { display: block; width: 100%; max-height: 340px; object-fit: contain; }
+.photo-placeholder { display: grid; justify-items: center; gap: 9px; text-align: center; padding: 22px 12px; color: var(--ink); }
+.photo-filename { color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+.visual-search-button { width: 100%; }
+.visual-match-note { margin: 0 0 12px; }

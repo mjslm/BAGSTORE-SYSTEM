@@ -1,6 +1,7 @@
 export default function Icon({ name, size = 20, ...props }) {
   let paths = {
     bag: <><path d="M5 7h14l1 14H4L5 7Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>,
+    camera: <><rect x="3" y="6" width="18" height="15" rx="2" /><path d="m8 6 2-3h4l2 3" /><circle cx="12" cy="13" r="4" /></>,
     search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
     arrow: <><path d="M4 12h16m-6-6 6 6-6 6" /></>,
     close: <path d="m6 6 12 12M6 18 18 6" />,

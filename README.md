@@ -22,7 +22,7 @@ The deployed API base URL is `https://carry-and-co-api.onrender.com/api/v1`. [Ch
 | `backend/tests/` and `backend/openapi.yaml` | Integration tests and the OpenAPI specification |
 | `postman/` | API test collection and a shareable environment template |
 
-The Vercel storefront calls the Render API over HTTPS with JSON and uses a bearer token for signed-in requests. Express connects to Supabase PostgreSQL, calls Gemini for Bag Finder, Shopping Assistant, and Inventory Advisor, and creates Maya Sandbox checkouts. Maya sends signed payment events back to the Render webhook at `/api/v1/webhooks/maya`. Express verifies the events before updating order records.
+The Vercel storefront calls the Render API over HTTPS with JSON and uses a bearer token for signed-in requests. Express connects to Supabase PostgreSQL, calls Gemini for Bag Finder, Shopping Assistant, Visual Bag Search, and Inventory Advisor, and creates Maya Sandbox checkouts. Maya sends signed payment events back to the Render webhook at `/api/v1/webhooks/maya`. Express verifies the events before updating order records.
 
 ## Run in VS Code
 
@@ -79,13 +79,14 @@ Try `CARRY10` for 10% off qualifying orders, `PACK100` for ₱100 off qualifying
 ## Maya Sandbox and AI features
 
 - Set `MAYA_PUBLIC_KEY` and `MAYA_SECRET_KEY` using your Maya Sandbox credentials. Register your API's public HTTPS URL ending in `/api/v1/webhooks/maya` for `PAYMENT_SUCCESS`, `PAYMENT_FAILED`, `PAYMENT_CANCELLED`, and `PAYMENT_EXPIRED`. Set `MAYA_WEBHOOK_PUBLIC_KEY_1` and `MAYA_WEBHOOK_PUBLIC_KEY_2` to the Sandbox signing keys. The app accepts each key as a single line of Base64 or as a PEM with literal `\n` between its lines. [Maya Checkout webhook guide](https://developers.maya.ph/reference/configuring-your-webhook-for-maya-checkout)
-- Set `GEMINI_API_KEY` in the backend environment. `GEMINI_MODEL` defaults to `gemini-3.1-flash-lite`. Without credentials, Bag Finder returns a controlled 503, while the other two tools show their fallback results.
+- Set `GEMINI_API_KEY` in the backend environment. `GEMINI_MODEL` defaults to `gemini-3.1-flash-lite`. Without credentials, Bag Finder returns a controlled 503, while Shopping Assistant and Inventory Advisor show their fallback results and Visual Bag Search offers a catalog alternative.
 
-### AI Shopping Assistant and Inventory Advisor
+### AI Shopping Assistant, Visual Bag Search, and Inventory Advisor
 
 - Open **AI tools → Shopping Assistant** to ask about current bag prices, features, laptop fit, monograms, and shipping. Follow-up questions use recent conversation context. The assistant uses public catalog data and returns product links. Its API is `POST /api/v1/ai/assistant`.
+- Open **AI tools → Visual Bag Search**, choose a JPG, PNG or WebP photo (up to 10 MB), and select Find similar bags. The browser resizes the photo to a JPEG before sending it. Gemini identifies visible bag features and matches them to available catalog descriptions. The API (`POST /api/v1/ai/visual-search`) accepts up to 1 MiB of decoded image data and verifies returned product IDs.
 - Sign in as an admin and open **Admin → Inventory Advisor → Analyze inventory**. The API (`POST /api/v1/admin/ai/inventory`) uses available stock and confirmed payments from the last 30 days. It estimates a 14-day stock target, with a minimum of five units for products with recent sales. Low stock without sales is flagged for manual review.
-- Both new features use the existing server-side Gemini configuration. During provider failure, the Shopping Assistant shows a catalog help message and the Inventory Advisor returns its calculated inventory recommendations. Generating an advisor report does not change stock.
+- All AI features use the existing server-side Gemini configuration. During provider failure, the Shopping Assistant shows a catalog help message and the Inventory Advisor returns its calculated inventory recommendations. Generating an advisor report does not change stock.
 
 ## Tests
 

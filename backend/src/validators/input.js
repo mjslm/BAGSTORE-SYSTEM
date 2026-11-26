@@ -71,3 +71,17 @@ export const shopping = z.object({
   prompt: z.string().trim().min(5).max(500),
   history: z.array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().trim().min(1).max(1000) })).max(6).default([]),
 });
+
+const maxImageBytes = 1024 * 1024;
+
+export const visualSearch = z.object({
+  mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
+  data: z.string().min(16).max(4 * Math.ceil(maxImageBytes / 3)),
+}).strict().refine(({ mimeType, data }) => {
+  if (data.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) return false;
+  const bytes = Buffer.from(data, 'base64');
+  if (bytes.length > maxImageBytes || bytes.toString('base64') !== data) return false;
+  if (mimeType === 'image/jpeg') return bytes.length >= 4 && bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255])) && bytes.subarray(-2).equals(Buffer.from([255, 217]));
+  if (mimeType === 'image/png') return bytes.length >= 33 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && bytes.toString('ascii', 12, 16) === 'IHDR';
+  return bytes.length >= 16 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP' && bytes.readUInt32LE(4) + 8 === bytes.length;
+}, { path: ['data'], message: 'Upload a valid JPG, PNG or WebP image up to 1 MB.' });

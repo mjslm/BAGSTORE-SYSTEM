@@ -2254,6 +2254,75 @@ paths:
           content:
             application/json:
               schema: {$ref: "#/components/schemas/Error"}
+  /ai/visual-search:
+    post:
+      tags: [Discovery]
+      summary: Find bags similar to an uploaded photo
+      description: Accepts base64 image bytes, up to 1 MiB decoded. Gemini identifies visible features and ranks matching in-stock catalog descriptions. The API verifies the selected product IDs.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [mimeType, data]
+              properties:
+                mimeType: {type: string, enum: [image/jpeg, image/png, image/webp]}
+                data: {type: string, contentEncoding: base64, minLength: 16, maxLength: 1398104}
+      responses:
+        "200":
+          description: Photo analysis and up to four verified available products. An empty list means no matching bag was found.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, meta]
+                properties:
+                  success: {const: true}
+                  data:
+                    type: object
+                    required: [isBag, description, products, aiAssisted]
+                    properties:
+                      isBag: {type: boolean}
+                      description: {type: string}
+                      products:
+                        type: array
+                        maxItems: 4
+                        items: {$ref: "#/components/schemas/Product"}
+                      aiAssisted: {type: boolean}
+                  meta: {type: object}
+        "400":
+          description: Malformed JSON
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "413":
+          description: Request too large
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "422":
+          description: Invalid image type or data
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "429":
+          description: Too many visual search requests
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "503":
+          description: Visual Bag Search is unavailable
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
   /admin/ai/inventory:
     post:
       tags: [Admin]

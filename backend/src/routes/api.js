@@ -32,6 +32,7 @@ export function apiRoutes(c, auth) {
   api.post('/orders/:id/restore-cart', auth, c.restore);
   api.post('/ai/discover', aiLimit, c.discover);
   api.post('/ai/assistant', aiLimit, c.shoppingAssistant);
+  api.post('/ai/visual-search', limit(6), c.visualSearch);
   admin.use(auth, requireAdmin);
   admin.get('/dashboard', c.dashboard);
   admin.post('/ai/inventory', limit(5), c.inventoryAdvisor);

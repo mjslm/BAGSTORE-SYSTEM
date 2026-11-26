@@ -13,6 +13,7 @@ const Product = lazy(() => import('./pages/Product.jsx'));
 const Cart = lazy(() => import('./pages/Cart.jsx'));
 const Checkout = lazy(() => import('./pages/Checkout.jsx'));
 const Discovery = lazy(() => import('./pages/Discovery.jsx'));
+const ShoppingAssistant = lazy(() => import('./pages/ShoppingAssistant.jsx'));
 const AuthForm = lazy(() => import('./pages/AuthForm.jsx'));
 const Account = lazy(() => import('./pages/Account.jsx'));
 const Orders = lazy(() => import('./pages/Orders.jsx'));
@@ -24,7 +25,7 @@ export default function App() {
   useEffect(() => {
     window.scrollTo(0, 0);
     const heading = {
-      '/products': 'Shop Bags', '/cart': 'Your Bag', '/checkout': 'Checkout', '/ai-assistant': 'Bag Finder', '/orders': 'Your Orders',
+      '/products': 'Shop Bags', '/cart': 'Your Bag', '/checkout': 'Checkout', '/ai-assistant': 'Bag Finder', '/ai-assistant/chat': 'Shopping Assistant', '/orders': 'Your Orders',
       '/account': 'Account', '/login': 'Sign In', '/register': 'Create Account',
     }[pathname];
     document.title = heading ? heading + ' | Carry & Co.' : 'Carry & Co. | Everyday Bags';
@@ -42,6 +43,7 @@ export default function App() {
           <Route path="cart" element={<Cart />} />
           <Route path="checkout" element={<Protected><Checkout /></Protected>} />
           <Route path="ai-assistant" element={<Discovery />} />
+          <Route path="ai-assistant/chat" element={<ShoppingAssistant key={search} />} />
           <Route path="login" element={<AuthForm key="login" mode="login" />} />
           <Route path="register" element={<AuthForm key="register" mode="register" />} />
           <Route path="account" element={<Protected><Account /></Protected>} />

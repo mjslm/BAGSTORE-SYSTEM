@@ -13,7 +13,7 @@ const slug = (req) => validate(schemas.slug, req.params.id);
 const body = (req, schema) => validate(schema, req.body);
 const query = (req, schema) => validate(schema, req.query);
 
-export function controllers({ db, secret, checkout, gateway, discover }) {
+export function controllers({ db, secret, checkout, gateway, discover, shoppingAssistant, inventoryAdvisor }) {
   return {
     health: async (req, res) => { await db.query('SELECT 1'); send(res, { status: 'ok' }); },
     register: async (req, res) => send(res, session(await registerUser(db, body(req, schemas.register)), secret), 201),
@@ -42,7 +42,9 @@ export function controllers({ db, secret, checkout, gateway, discover }) {
       send(res, await checkout.recordWebhook(payload));
     },
     discover: async (req, res) => send(res, await discover(body(req, schemas.ai).prompt)),
+    shoppingAssistant: async (req, res) => send(res, await shoppingAssistant(body(req, schemas.shopping))),
     dashboard: async (req, res) => send(res, await dashboard(db)),
+    inventoryAdvisor: async (req, res) => send(res, await inventoryAdvisor()),
     adminProducts: async (req, res) => pagination(res, await stock.listProducts(db, query(req, schemas.catalog), true)),
     createProduct: async (req, res) => {
       const input = body(req, schemas.product.extend({ id: schemas.slug }));

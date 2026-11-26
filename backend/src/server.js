@@ -15,10 +15,11 @@ const gateway = new MayaCheckout({
   webhookKeys: [env.MAYA_WEBHOOK_PUBLIC_KEY_1, env.MAYA_WEBHOOK_PUBLIC_KEY_2].filter(Boolean).map((key) => key.replaceAll('\\n', '\n')),
 });
 const checkout = new CheckoutService(db, gateway);
-const discover = createDiscovery(db, { key: env.GEMINI_API_KEY, model: env.GEMINI_MODEL });
+const aiOptions = { key: env.GEMINI_API_KEY, model: env.GEMINI_MODEL };
+const discover = createDiscovery(db, aiOptions);
 const localOrigins = env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:4173', 'http://127.0.0.1:5173', 'http://127.0.0.1:4173'] : [];
 const origins = [frontend.origin, ...localOrigins, ...(env.ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean)];
-const app = createApp({ db, gateway, checkout, discover, secret, origins, trustProxy: Number(env.TRUST_PROXY_HOPS || 0) });
+const app = createApp({ db, gateway, checkout, discover, aiOptions, secret, origins, trustProxy: Number(env.TRUST_PROXY_HOPS || 0) });
 const server = app.listen(Number(env.PORT || 4000), () => console.log('Carry & Co. API listening on port', server.address().port));
 let busy = false;
 let lastExpiry = 0;

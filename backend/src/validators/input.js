@@ -67,3 +67,7 @@ const date = z.iso.date();
 export const orders = paging.extend({ status: z.enum(statuses).optional(), from: date.optional(), to: date.optional() })
   .refine((value) => !value.from || !value.to || value.from <= value.to, { path: ['to'], message: 'End date must be after the start date.' });
 export const ai = z.object({ prompt: z.string().trim().min(5).max(280) });
+export const shopping = z.object({
+  prompt: z.string().trim().min(5).max(500),
+  history: z.array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().trim().min(1).max(1000) })).max(6).default([]),
+});

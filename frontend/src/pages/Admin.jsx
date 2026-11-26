@@ -6,6 +6,7 @@ import { money } from '../utils/format.js';
 import AdminCatalog from './admin/AdminCatalog.jsx';
 import AdminCoupons from './admin/AdminCoupons.jsx';
 import AdminOrders from './admin/AdminOrders.jsx';
+import InventoryAdvisor from './admin/InventoryAdvisor.jsx';
 
 function Dashboard() {
   const { token } = useAuth();
@@ -18,14 +19,14 @@ function Dashboard() {
       {[['Paid orders', paid], ['Gross sales', money(gross)], ['Awaiting payment', pending], ['Flagged payments', flagged], ['Webhooks to review', webhookReview]].map(([label, value]) =>
         <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
     </dl>
-    <section className="summary-card"><h2>Low stock</h2>{lowStock.length ? <ul className="order-line-list">
+    <section className="summary-card"><div className="section-title"><h2>Low stock</h2><NavLink className="text-link" to="/admin/inventory-advisor">Inventory Advisor</NavLink></div>{lowStock.length ? <ul className="order-line-list">
       {lowStock.map((bag) => <li key={bag.id}><span>{bag.name}</span><strong>{bag.stock} left</strong></li>)}
     </ul> : <p>All active bags have sufficient stock.</p>}</section>
   </>;
 }
 
 export default function Admin() {
-  const pages = [['/admin', 'Dashboard'], ['/admin/products', 'Products'], ['/admin/categories', 'Categories'], ['/admin/coupons', 'Coupons'], ['/admin/orders', 'Orders']];
+  const pages = [['/admin', 'Dashboard'], ['/admin/products', 'Products'], ['/admin/categories', 'Categories'], ['/admin/coupons', 'Coupons'], ['/admin/orders', 'Orders'], ['/admin/inventory-advisor', 'Inventory Advisor']];
   return <section className="content">
     <div className="page-heading"><h1>Store admin</h1></div>
     <nav className="admin-nav" aria-label="Admin navigation">{pages.map(([to, label]) => <NavLink to={to} key={to} end>{label}</NavLink>)}</nav>
@@ -35,6 +36,7 @@ export default function Admin() {
       <Route path="categories" element={<AdminCatalog key="categories" mode="categories" />} />
       <Route path="coupons" element={<AdminCoupons />} />
       <Route path="orders" element={<AdminOrders />} />
+      <Route path="inventory-advisor" element={<InventoryAdvisor />} />
       <Route path="*" element={<ErrorBox error="That admin page could not be found." />} />
     </Routes>
   </section>;

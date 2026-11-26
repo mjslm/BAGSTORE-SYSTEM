@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useNetwork } from '../context/NetworkStatusContext.jsx';
 import Icon from '../components/Icon.jsx';
+import AiNavigation from '../components/AiNavigation.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { Empty, ErrorBox, SkeletonLoader } from '../components/Feedback.jsx';
 
@@ -27,6 +28,7 @@ export default function Discovery() {
   return <section className="content">
     <div className="page-heading"><p className="eyebrow"><Icon name="sparkle" size={17} /> AI-Assisted</p><h1>Bag Finder</h1>
       <p>Tell us what you carry, where you’re headed, or what you want to spend.</p></div>
+    <AiNavigation />
     <form className="form-stack discovery-form" onSubmit={submit}>
       <label>What kind of bag are you looking for?<textarea value={prompt} onChange={(event) => setPrompt(event.target.value)}
         minLength={5} maxLength={280} required rows={4} placeholder="A backpack for a 15.6-inch laptop under ₱2,000" /></label>

@@ -10,6 +10,18 @@ If Gemini times out or returns an unusable response, Bag Finder can show up to f
 
 **Where to look:** [Discovery service](../backend/src/services/discovery.js) and [Bag Finder page](../frontend/src/pages/Discovery.jsx).
 
+## Gemini Shopping Assistant
+
+**Endpoint:** `POST /api/v1/ai/assistant`. The customer sends a question and up to six recent conversation messages. Express retrieves relevant public catalog records and store facts, asks Gemini for an answer and product IDs, and verifies the IDs and product details before sending the response. If Gemini is unavailable, the storefront links to the catalog.
+
+**Where to look:** [Shopping service](../backend/src/services/shopping.js), [shared Gemini client](../backend/src/services/gemini.js), and [Shopping Assistant page](../frontend/src/pages/ShoppingAssistant.jsx).
+
+## Gemini Inventory Advisor
+
+**Endpoint:** `POST /api/v1/admin/ai/inventory`. The server requires an authenticated admin. PostgreSQL aggregates verified payments from the past 30 days and their order quantities by product. Express calculates the target stock using 14 days of recent sales, with a five-unit minimum for products that have sold. It subtracts available stock from the target and suggests reviewing low stock without recent sales. Gemini explains and prioritizes the calculated recommendations using product-level totals. The report is read-only and has an inventory-rules fallback.
+
+**Where to look:** [Inventory query](../backend/src/repositories/inventory.js), [Inventory Advisor service](../backend/src/services/inventoryAdvisor.js), and [Inventory Advisor page](../frontend/src/pages/admin/InventoryAdvisor.jsx).
+
 ## Maya Sandbox checkout
 
 | Endpoint | Role in checkout |

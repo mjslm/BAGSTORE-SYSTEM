@@ -16,7 +16,7 @@ export default function StoreHeader() {
       </Link>
       <nav className="desktop-nav" aria-label="Main navigation">
         <NavLink to="/products">Shop</NavLink>
-        <NavLink to="/ai-assistant">Bag Finder</NavLink>
+        <NavLink to="/ai-assistant">AI tools</NavLink>
         <NavLink to="/orders">Orders</NavLink>
         {user?.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
       </nav>

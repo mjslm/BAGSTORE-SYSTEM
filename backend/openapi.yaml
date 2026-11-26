@@ -2190,6 +2190,110 @@ paths:
                   code: AI_UNAVAILABLE
                   message: Bag Finder is unavailable. Try the catalog search.
                 requestId: 4f6e5173-87d0-43fc-b36e-c0a15b04c654
+  /ai/assistant:
+    post:
+      tags: [Discovery]
+      summary: Ask the Shopping Assistant about bags and store information
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt: {type: string, minLength: 5, maxLength: 500}
+                history:
+                  type: array
+                  maxItems: 6
+                  items:
+                    type: object
+                    required: [role, text]
+                    properties:
+                      role: {type: string, enum: [user, assistant]}
+                      text: {type: string, minLength: 1, maxLength: 1000}
+            example:
+              prompt: Does the Desk to Dinner Tote fit a 16-inch laptop?
+              history: []
+      responses:
+        "200":
+          description: An answer and live catalog references, or a catalog help message if Gemini is unavailable.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, meta]
+                properties:
+                  success: {const: true}
+                  data:
+                    $ref: "#/components/schemas/ShoppingReply"
+                  meta: {type: object}
+        "400":
+          description: Malformed JSON
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "413":
+          description: Request too large
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "422":
+          description: Invalid question or history
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "429":
+          description: Too many AI requests
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+  /admin/ai/inventory:
+    post:
+      tags: [Admin]
+      summary: Analyze verified sales and available inventory
+      description: Read-only. Calculates reorder quantities from confirmed payments in the last 30 days and asks Gemini for explanations and priorities. Inventory rules remain available if Gemini is unavailable.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Inventory recommendations and verified stock and sales aggregates.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, data, meta]
+                properties:
+                  success: {const: true}
+                  data:
+                    $ref: "#/components/schemas/InventoryReport"
+                  meta: {type: object}
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "403":
+          description: Administrator role required
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "429":
+          description: Too many AI requests
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
   /admin/dashboard:
     get:
       tags:
@@ -4343,6 +4447,56 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ShoppingReply:
+      type: object
+      required: [answer, products, aiAssisted]
+      properties:
+        answer: {type: string}
+        products:
+          type: array
+          maxItems: 4
+          items: {$ref: "#/components/schemas/Product"}
+        aiAssisted: {type: boolean}
+    InventoryReport:
+      type: object
+      required: [generatedAt, policy, summary, aiAssisted, overview, recommendations]
+      properties:
+        generatedAt: {type: string, format: date-time}
+        aiAssisted: {type: boolean}
+        overview: {type: string}
+        policy:
+          type: object
+          required: [salesDays, targetDays, lowStockThreshold, minimumTarget]
+          properties:
+            salesDays: {type: integer, const: 30}
+            targetDays: {type: integer, const: 14}
+            lowStockThreshold: {type: integer, const: 4}
+            minimumTarget: {type: integer, const: 5}
+        summary:
+          type: object
+          required: [productsAnalyzed, unitsSold, lowStock, reorderCount, attentionCount]
+          properties:
+            productsAnalyzed: {type: integer, minimum: 0}
+            unitsSold: {type: integer, minimum: 0}
+            lowStock: {type: integer, minimum: 0}
+            reorderCount: {type: integer, minimum: 0}
+            attentionCount: {type: integer, minimum: 0}
+        recommendations:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            required: [id, name, category, stock, units_sold, target, suggestedReorder, action, note]
+            properties:
+              id: {type: string}
+              name: {type: string}
+              category: {type: string}
+              stock: {type: integer, minimum: 0}
+              units_sold: {type: integer, minimum: 0}
+              target: {type: integer, minimum: 0}
+              suggestedReorder: {type: integer, minimum: 0}
+              action: {type: string, enum: [restock, review]}
+              note: {type: string}
     User:
       type: object
       properties:

@@ -400,7 +400,10 @@ test('Visual Bag Search validates the image and returns only current in-stock pr
   assert.ok(data.length > 32 * 1024);
   const body = { mimeType: 'image/webp', data };
   await db.query("UPDATE products SET stock=0 WHERE id='mini-crossbody'");
+  let attempts = 0;
   geminiReply = (request) => {
+    attempts++;
+    if (attempts === 1) throw new DOMException('Timed out', 'TimeoutError');
     const parts = request.contents[0].parts;
     assert.equal(parts[1].inlineData.mimeType, 'image/webp');
     assert.equal(parts[1].inlineData.data, data);
@@ -412,6 +415,7 @@ test('Visual Bag Search validates the image and returns only current in-stock pr
       geminiResponse({ isBag: true, description: 'A structured caramel tote.', ids: ['desk-tote','studio-tote','mini-crossbody','invented'] }));
   };
   const result = await post('/ai/visual-search', body);
+  assert.equal(attempts, 2);
   assert.equal(result.status, 200);
   assert.equal(result.data.aiAssisted, true);
   assert.equal(result.data.isBag, true);
@@ -427,8 +431,13 @@ test('Visual Bag Search validates the image and returns only current in-stock pr
   const noMatch = await post('/ai/visual-search', body);
   assert.equal(noMatch.data.isBag, true);
   assert.deepEqual(noMatch.data.products, []);
-  geminiReply = () => new Response(null, { status: 503 });
+  attempts = 0;
+  geminiReply = () => {
+    attempts++;
+    return new Response(null, { status: 503 });
+  };
   const unavailable = await post('/ai/visual-search', body);
+  assert.equal(attempts, 2);
   assert.equal(unavailable.status, 503);
   assert.equal(unavailable.error.code, 'AI_UNAVAILABLE');
   assert.equal((await post('/ai/visual-search', { ...body, data: 'A'.repeat(1450000) })).status, 413);

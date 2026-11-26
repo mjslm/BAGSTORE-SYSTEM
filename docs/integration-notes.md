@@ -18,7 +18,7 @@ If Gemini times out or returns an unusable response, Bag Finder can show up to f
 
 ## Gemini Visual Bag Search
 
-**Endpoint:** `POST /api/v1/ai/visual-search`. The browser prepares a resized JPEG from the selected photo. Express validates the image type and size, sends the image and available catalog descriptions to Gemini, then rechecks selected IDs against PostgreSQL. Results describe similarity in style, color, and design. The app does not store uploaded photos. If Gemini is unavailable, the shopper can use Bag Finder or the catalog.
+**Endpoint:** `POST /api/v1/ai/visual-search`. The browser prepares a resized JPEG from the selected photo. Express validates the image type and size, sends the image and available catalog descriptions to Gemini, then rechecks selected IDs against PostgreSQL. Results describe similarity in style, color, and design. The app does not store uploaded photos. Photo analysis allows a longer first request and one bounded retry for temporary Gemini failures. If the provider is still unavailable, the shopper can retry with the selected photo, use Bag Finder, or browse the catalog.
 
 **Where to look:** [Visual Search page](../frontend/src/pages/VisualSearch.jsx), [photo preparation](../frontend/src/utils/prepareBagPhoto.js), and [Visual Search service](../backend/src/services/visualSearch.js).
 

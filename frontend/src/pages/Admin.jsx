@@ -14,10 +14,10 @@ function Dashboard() {
   const stats = useRequest('/admin/dashboard', { token });
   if (stats.loading) return <SkeletonLoader />;
   if (stats.error) return <ErrorBox error={stats.error} />;
-  const { paid, gross, pending, flagged, webhookReview, lowStock } = stats.data;
+  const { paid, gross, pending, lowStock } = stats.data;
   return <>
-    <dl className="dashboard-grid">
-      {[['Paid orders', paid], ['Gross sales', money(gross)], ['Awaiting payment', pending], ['Flagged payments', flagged], ['Webhooks to review', webhookReview]].map(([label, value]) =>
+    <dl className="dashboard-grid dashboard-summary">
+      {[['Paid orders', paid], ['Gross sales', money(gross)], ['Awaiting payment', pending]].map(([label, value]) =>
         <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
     </dl>
     <section className="summary-card"><div className="section-title"><h2>Low stock</h2><NavLink className="text-link" to="/admin/inventory-advisor">Inventory Advisor</NavLink></div>{lowStock.length ? <ul className="order-line-list">

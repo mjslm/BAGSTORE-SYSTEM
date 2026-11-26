@@ -10,6 +10,7 @@ import { HttpError } from './utils/http.js';
 import { createGemini } from './services/gemini.js';
 import { createShoppingAssistant } from './services/shopping.js';
 import { createInventoryAdvisor } from './services/inventoryAdvisor.js';
+import { createVisualSearch } from './services/visualSearch.js';
 
 const referencePage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carry &amp; Co. API</title><link rel="stylesheet" href="/api-docs/assets/swagger-ui.css"></head><body>
@@ -33,13 +34,15 @@ export function createApp({ db, gateway, checkout, discover, aiOptions = {}, sec
   const gemini = createGemini(aiOptions);
   const shoppingAssistant = createShoppingAssistant(db, gemini);
   const inventoryAdvisor = createInventoryAdvisor(db, gemini);
-  const api = controllers({ db, gateway, checkout, discover, shoppingAssistant, inventoryAdvisor, secret });
+  const visualSearch = createVisualSearch(db, gemini);
+  const api = controllers({ db, gateway, checkout, discover, shoppingAssistant, inventoryAdvisor, visualSearch, secret });
   app.use('/api/v1', (req, res, next) => {
     const catalog = req.method === 'GET' && /^\/(?:products(?:\/[^/]+)?|categories)\/?$/.test(req.path);
     res.setHeader('Cache-Control', catalog ? 'public, max-age=0, must-revalidate' : 'no-store');
     next();
   });
   app.post('/api/v1/webhooks/maya', express.raw({ type: 'application/json', limit: '64kb' }), api.webhook);
+  app.use('/api/v1/ai/visual-search', express.json({ limit: '1400kb' }));
   app.use(express.json({ limit: '32kb' }));
   app.use('/api/v1', apiRoutes(api, authMiddleware(db, secret)));
   app.get('/openapi.yaml', (req, res) => res.type('yaml').sendFile(referenceSpec));

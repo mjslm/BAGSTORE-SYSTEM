@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { after, before, test } from 'node:test';
 import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { Client } from 'pg';
@@ -392,4 +393,43 @@ test('Inventory Advisor uses recent verified sales only, protects admin access a
   assert.equal(fallback.data.aiAssisted, false);
   assert.equal(fallback.data.recommendations.find((item) => item.id === product.id).suggestedReorder, 4);
   assert.equal((await get('/products/' + product.id)).data.stock, 2);
+});
+
+test('Visual Bag Search validates the image and returns only current in-stock products', async () => {
+  const data = (await readFile(new URL('../../frontend/public/images/photos/studio-tote.webp', import.meta.url))).toString('base64');
+  assert.ok(data.length > 32 * 1024);
+  const body = { mimeType: 'image/webp', data };
+  await db.query("UPDATE products SET stock=0 WHERE id='mini-crossbody'");
+  geminiReply = (request) => {
+    const parts = request.contents[0].parts;
+    assert.equal(parts[1].inlineData.mimeType, 'image/webp');
+    assert.equal(parts[1].inlineData.data, data);
+    const { catalog } = JSON.parse(parts[0].text);
+    assert.ok(catalog.some((bag) => bag.id === 'desk-tote'));
+    assert.ok(catalog.every((bag) => !['mini-crossbody','city-backpack','advisor-inactive'].includes(bag.id)));
+    // The photo matches one bag that is sold while Gemini is preparing the reply.
+    return db.query("UPDATE products SET stock=0 WHERE id='studio-tote'").then(() =>
+      geminiResponse({ isBag: true, description: 'A structured caramel tote.', ids: ['desk-tote','studio-tote','mini-crossbody','invented'] }));
+  };
+  const result = await post('/ai/visual-search', body);
+  assert.equal(result.status, 200);
+  assert.equal(result.data.aiAssisted, true);
+  assert.equal(result.data.isBag, true);
+  assert.deepEqual(result.data.products.map((product) => product.id), ['desk-tote']);
+
+  assert.equal((await post('/ai/visual-search', { ...body, mimeType: 'image/png' })).status, 422);
+  assert.equal((await post('/ai/visual-search', { ...body, data: 'not-an-image-base64' })).status, 422);
+  geminiReply = () => geminiResponse({ isBag: false, description: 'No bag visible.', ids: ['desk-tote'] });
+  const noBag = await post('/ai/visual-search', body);
+  assert.equal(noBag.data.isBag, false);
+  assert.deepEqual(noBag.data.products, []);
+  geminiReply = () => geminiResponse({ isBag: true, description: 'A bag with no matching style.', ids: [] });
+  const noMatch = await post('/ai/visual-search', body);
+  assert.equal(noMatch.data.isBag, true);
+  assert.deepEqual(noMatch.data.products, []);
+  geminiReply = () => new Response(null, { status: 503 });
+  const unavailable = await post('/ai/visual-search', body);
+  assert.equal(unavailable.status, 503);
+  assert.equal(unavailable.error.code, 'AI_UNAVAILABLE');
+  assert.equal((await post('/ai/visual-search', { ...body, data: 'A'.repeat(1450000) })).status, 413);
 });

@@ -1,6 +1,10 @@
 export default function Icon({ name, size = 20, ...props }) {
   let paths = {
     bag: <><path d="M5 7h14l1 14H4L5 7Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>,
+    chat: <><path d="M20 11a8 8 0 0 1-8 8H5l1.5-4A8 8 0 1 1 20 11Z"/><path d="M9 11h6m-6-3h4"/></>,
+    tag: <><path d="m3 4 10 0 8 8-9 9-9-9V4Z"/><circle cx="8" cy="8" r="1.4"/></>,
+    receipt: <><path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3Z"/><path d="M8 8h8m-8 4h8m-8 4h5"/></>,
+    layers: <><path d="m12 3 10 6-10 6L2 9l10-6Zm-10 11 10 6 10-6"/></>,
     camera: <><rect x="3" y="6" width="18" height="15" rx="2" /><path d="m8 6 2-3h4l2 3" /><circle cx="12" cy="13" r="4" /></>,
     search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
     arrow: <><path d="M4 12h16m-6-6 6 6-6 6" /></>,

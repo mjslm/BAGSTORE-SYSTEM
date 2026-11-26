@@ -64,6 +64,8 @@ export default function App() {
         <Link className="footer-brand" to="/">Carry &amp; Co.</Link>
         <nav aria-label="Footer navigation">
           <Link to="/products">Shop bags</Link>
+          <Link to="/ai-assistant">AI tools</Link>
+          <Link to="/orders">Orders</Link>
           <a href="/images/photos/credits.txt">Photo credits</a>
         </nav>
       </div>

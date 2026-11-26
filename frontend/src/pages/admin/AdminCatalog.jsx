@@ -3,6 +3,7 @@ import { api, endpoint } from '../../api/client.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useRequest } from '../../hooks/useRequest.js';
 import { ErrorBox, Pagination, SkeletonLoader } from '../../components/Feedback.jsx';
+import BagImage from '../../components/BagImage.jsx';
 import { money, when } from '../../utils/format.js';
 
 const emptyProduct = { id: '', name: '', description: '', category_id: '', color: '', image: '/images/tote.svg',
@@ -135,7 +136,10 @@ export default function AdminCatalog({ mode }) {
     {stock && <StockEditor key={stock.id} product={stock} reload={reload} />}
     {result.loading ? <SkeletonLoader /> : result.error ? <ErrorBox error={result.error} onRetry={saved} /> : <>
       <div className="admin-list">{result.data.map((row) => <article key={row.id} className="admin-row">
-        <div><strong>{row.name}</strong><p>{row.active ? 'Visible' : 'Hidden'}{isProduct && ' · ' + row.stock + ' in stock · ' + money(row.price_cents)}</p></div>
+        <div className="admin-row-product">
+          {isProduct && <span className="admin-product-photo" style={{ backgroundColor: row.background }}><BagImage bag={row} decorative /></span>}
+          <div><strong>{row.name}</strong><p>{row.active ? 'Visible' : 'Hidden'}{isProduct && ' · ' + row.stock + ' in stock · ' + money(row.price_cents)}</p></div>
+        </div>
         <div className="actions"><button className="button subtle" type="button" onClick={() => edit(row)}>Edit</button>
           {isProduct && <button className="button subtle" type="button" onClick={() => setStock({ ...row, onSaved: saved })}>Stock</button>}</div>
       </article>)}</div><Pagination meta={result.meta} onPage={setPage} /></>}

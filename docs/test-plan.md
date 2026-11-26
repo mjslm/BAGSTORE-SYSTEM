@@ -1,6 +1,6 @@
 # Carry & Co. test plan
 
-Use this plan to choose demo requests, check the expected responses, and record the outcome of a new run. It covers the REST API, customer and admin access, checkout, Maya Sandbox, and Bag Finder.
+Use this plan to choose demo requests, check the expected responses, and record the outcome of a new run. It covers the REST API, customer and admin access, checkout, Maya Sandbox, and the three AI features.
 
 ## Choose a test environment
 
@@ -33,6 +33,9 @@ Postman appends the paths below to `baseUrl`. For example, **System › API heal
 | Checkout › Replay the same checkout key | `POST /checkout` | `200` with the same order ID for the same `Idempotency-Key` |
 | Maya webhooks › Reject absent signature | `POST /webhooks/maya` | `401` when the request has no webhook signature |
 | Discovery › Check AI or service fallback | `POST /ai/discover` | `200` when Bag Finder is configured and can return results, or `503` when the integration is unavailable |
+| Discovery › Ask the Shopping Assistant | `POST /ai/assistant` | `200` with answer, verified product references, and `aiAssisted` |
+| Admin › Reject customer access to Inventory Advisor | `POST /admin/ai/inventory` | `403` when a signed-in customer requests the advisor |
+| Admin › Analyze inventory as admin | `POST /admin/ai/inventory` | `200` with stock, recent verified sales, and suggested reorder quantities |
 | Admin › Adjust and audit stock | `PATCH /admin/products/metro-daypack/stock` | `200`. The matching **Review recorded stock changes** request reads the adjustment log |
 
 ## Run backend integration tests
@@ -47,6 +50,12 @@ Use these tests to show checks beyond a single Postman response. One of two conc
 | --- | --- |
 | Postman CLI against the local Express test API and PostgreSQL, with controlled Maya and Gemini responses | 40 requests completed, 84 assertions passed, 0 failures |
 | Backend integration suite on a fresh test schema | 14 tests passed, 0 failures |
+
+| Local verification on November 26, 2026 (AI feature branch) | Recorded result |
+| --- | --- |
+| Postman collection with controlled provider responses | 44 requests completed, 94 assertions passed, 0 failures |
+| Backend integration tests on a fresh test schema | 16 tests passed, 0 failures |
+| Browser checks | Shopping Assistant conversation, product shortcuts, offline state, and admin Inventory Advisor passed at 360×800, 390×844, 412×915, and 800×600 |
 
 Use the [deployed storefront](https://carry-and-co.vercel.app/) to verify the live integrations during your demo. Try **Bag Finder** with “A bag for my 16-inch laptop under ₱2,000” and compare the results with the catalog. Products can come from the catalog fallback during a Gemini timeout, so check `aiAssisted` in the API response when demonstrating a Gemini-assisted result. For the payment check, use a test account and a Maya Sandbox test card, then confirm the order reaches **Paid** in the storefront.
 

@@ -13,6 +13,7 @@ export function apiRoutes(c, auth) {
   const api = Router();
   const admin = Router();
   const authLimit = limit(25);
+  const aiLimit = limit(8);
   api.get('/health', c.health);
   api.post('/auth/register', authLimit, c.register);
   api.post('/auth/login', authLimit, c.login);
@@ -29,9 +30,11 @@ export function apiRoutes(c, auth) {
   api.post('/orders/:id/verify', auth, limit(30), c.verify);
   api.post('/orders/:id/cancel', auth, c.cancel);
   api.post('/orders/:id/restore-cart', auth, c.restore);
-  api.post('/ai/discover', limit(8), c.discover);
+  api.post('/ai/discover', aiLimit, c.discover);
+  api.post('/ai/assistant', aiLimit, c.shoppingAssistant);
   admin.use(auth, requireAdmin);
   admin.get('/dashboard', c.dashboard);
+  admin.post('/ai/inventory', limit(5), c.inventoryAdvisor);
   admin.get('/products', c.adminProducts);
   admin.post('/products', c.createProduct);
   admin.patch('/products/:id', c.saveProduct);

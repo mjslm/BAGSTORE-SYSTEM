@@ -4,6 +4,7 @@ import { conflict, invalid, requireValue } from '../utils/http.js';
 import { pricedCart, validateItem } from './catalog.js';
 
 export { listCoupons } from '../repositories/coupons.js';
+export const SHIPPING_CENTS = 12000;
 
 export async function quoteCart(db, rows, code, userId, lock = false) {
   if (!rows.length) throw conflict('CART_EMPTY', 'Add a bag before checkout.');
@@ -25,7 +26,7 @@ export async function quoteCart(db, rows, code, userId, lock = false) {
     if (uses.total >= coupon.max_uses || uses.customer >= coupon.max_per_user) throw invalid('COUPON_LIMIT', 'This coupon has reached its usage limit.');
     discount_cents = createDiscount(coupon.kind).calculate(subtotal_cents, coupon.value);
   }
-  const shipping_cents = 12000;
+  const shipping_cents = SHIPPING_CENTS;
   return { items, subtotal_cents, discount_cents, shipping_cents, total_cents: subtotal_cents - discount_cents + shipping_cents, currency };
 }
 

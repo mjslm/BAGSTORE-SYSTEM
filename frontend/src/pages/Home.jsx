@@ -60,6 +60,7 @@ export default function Home() {
     <nav className="content shop-assistance" aria-label="Shopping tools">
       <Link to="/products?fit=open"><Icon name="fit" size={23} /><span>Find your laptop fit</span><Icon name="arrow" size={18} /></Link>
       <Link to="/ai-assistant"><Icon name="sparkle" size={23} /><span>Explore Bag Finder</span><Icon name="arrow" size={18} /></Link>
+      <Link to="/ai-assistant/chat"><Icon name="sparkle" size={23} /><span>Ask the Shopping Assistant</span><Icon name="arrow" size={18} /></Link>
     </nav>
   </>;
 }

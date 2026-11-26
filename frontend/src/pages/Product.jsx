@@ -8,6 +8,7 @@ import { money } from '../utils/format.js';
 import { ErrorBox, SkeletonLoader } from '../components/Feedback.jsx';
 import Quantity from '../components/Quantity.jsx';
 import BagImage from '../components/BagImage.jsx';
+import Icon from '../components/Icon.jsx';
 
 function ProductContent({ bag }) {
   const { verified } = useAuth();
@@ -39,6 +40,7 @@ function ProductContent({ bag }) {
           pattern="[A-Z]{1,3}" maxLength={3} placeholder="ABC" autoCapitalize="characters" aria-describedby="monogram-help" />
           <small id="monogram-help">1 to 3 letters. The monogram appears on every bag in this line.</small></label>}
       </div>}
+      <Link className="text-link product-assistant-link" to={'/ai-assistant/chat?question=' + encodeURIComponent('Tell me more about ' + bag.name)}><Icon name="sparkle" size={17} /> Ask the Shopping Assistant</Link>
       <ErrorBox error={error} />
       {message && <p className="feedback success" role="status">{message} <Link className="text-link" to="/cart">View bag</Link></p>}
       <div className="sticky-actions">

@@ -14,6 +14,7 @@ const payloads = [];
 const key = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const shipping = { name: 'Jamie Cruz', phone: '09171234567', address: '123 Quezon Avenue', city: 'Iligan City', postalCode: '9200' };
 let db, checkout, server, origin, jamie, alex, admin;
+let geminiReply;
 const schema = 'carry_test_' + randomUUID().replaceAll('-', '');
 let schemaOwner;
 let schemaCreated = false;
@@ -76,6 +77,7 @@ before(async () => {
     frontendUrl: 'http://localhost:5173', request: mayaTransport });
   checkout = new CheckoutService(db, gateway);
   const app = createApp({ db, gateway, checkout, discover: createDiscovery(db, { key: '' }),
+    aiOptions: { key: 'fixture', request: async (url, options) => geminiReply(JSON.parse(options.body)) },
     secret: randomUUID() + randomUUID(), origins: ['http://localhost:5173'] });
   server = await new Promise((resolve) => { const listener = app.listen(0, '127.0.0.1', () => resolve(listener)); });
   origin = 'http://127.0.0.1:' + server.address().port + '/api/v1';
@@ -305,4 +307,89 @@ test('admin creates and edits a product, category and coupon through the API', a
   assert.equal((await post('/checkout/quote', { couponCode: 'TEST150' }, alex)).error.code, 'COUPON_INVALID');
   assert.equal((await call('PUT', '/admin/categories/belt-bags', { token: admin, body: { name: 'Belt bags', active: false } })).status, 200);
   assert.equal((await get('/products/belt-bag')).status, 404);
+});
+
+
+function geminiResponse(reply) {
+  return Response.json({ candidates: [{ content: { parts: [{ text: JSON.stringify(reply) }] } }] });
+}
+
+test('Shopping Assistant answers with live public product references and bounded conversation history', async () => {
+  geminiReply = (request) => {
+    const input = JSON.parse(request.contents[0].parts[0].text);
+    assert.equal(input.prompt, 'Does it support a monogram?');
+    assert.deepEqual(input.history, [{ role: 'user', text: 'Tell me about the Desk to Dinner Tote' }]);
+    assert.equal(input.store.shipping_cents, 12000);
+    assert.ok(input.catalog.every((bag) => bag.id !== 'city-backpack'));
+    assert.ok(input.catalog.every((bag) => !('user_id' in bag)));
+    return geminiResponse({ answer: 'The Desk to Dinner Tote supports a 150 peso monogram.', productIds: ['desk-tote'] });
+  };
+  const history = [{ role: 'user', text: 'Tell me about the Desk to Dinner Tote' }];
+  const result = await post('/ai/assistant', { prompt: 'Does it support a monogram?', history });
+  assert.equal(result.status, 200);
+  assert.equal(result.data.aiAssisted, true);
+  assert.equal(result.data.products[0].id, 'desk-tote');
+  assert.equal(result.data.products[0].monogram_cents, 15000);
+  assert.equal((await post('/ai/assistant', { prompt: 'a' })).status, 422);
+  assert.equal((await post('/ai/assistant', { prompt: 'Hello assistant', history: Array(7).fill(history[0]) })).status, 422);
+
+  geminiReply = () => geminiResponse({ answer: 'Incorrect product', productIds: ['made-up-bag'] });
+  const invalid = await post('/ai/assistant', { prompt: 'Tell me about bags' });
+  assert.equal(invalid.data.aiAssisted, false);
+  assert.deepEqual(invalid.data.products, []);
+  geminiReply = () => new Response(null, { status: 503 });
+  const fallback = await post('/ai/assistant', { prompt: 'Tell me about bags' });
+  assert.equal(fallback.status, 200);
+  assert.equal(fallback.data.aiAssisted, false);
+});
+
+test('Inventory Advisor uses recent verified sales only, protects admin access and keeps stock unchanged', async () => {
+  const product = { id: 'advisor-demo-bag', name: 'Advisor Demo Bag', description: 'A test laptop bag',
+    color: 'Oat', image: '/images/tote.svg', background: '#ece8df', category_id: 'totes', price_cents: 100000,
+    stock: 2, active: true, laptop_inches: 16, monogram_cents: null };
+  assert.equal((await post('/admin/products', product, admin)).status, 201);
+  assert.equal((await post('/admin/products', { ...product, id: 'advisor-no-sales', name: 'Advisor No Sales', stock: 0 }, admin)).status, 201);
+  assert.equal((await post('/admin/products', { ...product, id: 'advisor-inactive', name: 'Advisor Inactive', active: false }, admin)).status, 201);
+
+  const user = (await post('/auth/register', { name: 'Inventory Fixture', email: 'inventory@example.com', password: 'TestInventory2026!' })).data.user;
+  for (const [quantity, status, daysAgo, verified] of [[6, 'paid', 1, true], [6, 'delivered', 2, true],
+    [50, 'paid', 40, true], [9, 'pending_payment', 1, false], [4, 'cancelled', 1, false]]) {
+    const orderId = randomUUID();
+    await db.query(`INSERT INTO orders (id,user_id,idem_key,request_hash,shipping,subtotal_cents,discount_cents,shipping_cents,total_cents,status,expires_at)
+      VALUES ($1,$2,$3,'fixture','{}',$4,0,0,$4,$5,now()+interval '1 day')`,
+      [orderId, user.id, randomUUID(), product.price_cents * quantity, status]);
+    await db.query('INSERT INTO order_items (order_id,product_id,name,image,unit_cents,quantity) VALUES ($1,$2,$3,$4,$5,$6)',
+      [orderId, product.id, product.name, product.image, product.price_cents, quantity]);
+    if (verified) await db.query(`INSERT INTO payments (gateway_id,order_id,amount_cents,currency,created_at)
+      VALUES ($1,$2,$3,'PHP',now()-($4::int * interval '1 day'))`,
+      [randomUUID(), orderId, product.price_cents * quantity, daysAgo]);
+  }
+
+  assert.equal((await post('/admin/ai/inventory', {})).status, 401);
+  assert.equal((await post('/admin/ai/inventory', {}, jamie)).status, 403);
+  geminiReply = (request) => {
+    const input = JSON.parse(request.contents[0].parts[0].text);
+    const item = input.recommendations.find((bag) => bag.id === product.id);
+    assert.equal(item.units_sold, 12);
+    assert.equal(item.stock, 2);
+    assert.equal(item.target, 6);
+    assert.equal(item.suggestedReorder, 4);
+    assert.ok(input.recommendations.every((bag) => bag.id !== 'advisor-inactive'));
+    return geminiResponse({ overview: 'Restock the demo bag based on its recent sales.', priorities: [
+      { productId: product.id, note: 'It has consistent recent sales and low stock.' },
+    ] });
+  };
+  const result = await post('/admin/ai/inventory', {}, admin);
+  assert.equal(result.status, 200);
+  assert.equal(result.data.aiAssisted, true);
+  assert.equal(result.data.recommendations[0].id, product.id);
+  assert.equal(result.data.recommendations[0].suggestedReorder, 4);
+  const noSales = result.data.recommendations.find((item) => item.id === 'advisor-no-sales');
+  assert.equal(noSales.action, 'review');
+  assert.equal(noSales.suggestedReorder, 0);
+  geminiReply = () => { throw new DOMException('Timed out', 'TimeoutError'); };
+  const fallback = await post('/admin/ai/inventory', {}, admin);
+  assert.equal(fallback.data.aiAssisted, false);
+  assert.equal(fallback.data.recommendations.find((item) => item.id === product.id).suggestedReorder, 4);
+  assert.equal((await get('/products/' + product.id)).data.stock, 2);
 });

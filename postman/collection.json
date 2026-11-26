@@ -1023,6 +1023,41 @@
               }
             }
           }
+        },
+        {
+          "name": "Ask the Shopping Assistant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "const envelope = pm.response.json(); pm.test('Consistent envelope', () => pm.expect(envelope.success).to.equal(pm.response.code < 400));",
+                  "pm.test('Shopping reply with catalog references', () => { pm.expect(envelope.data.answer).to.be.a('string'); pm.expect(envelope.data.products).to.be.an('array'); pm.expect(envelope.data.aiAssisted).to.be.a('boolean'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/ai/assistant",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Does the Desk to Dinner Tote fit a 16-inch laptop?\",\n  \"history\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
         }
       ]
     },
@@ -1316,6 +1351,77 @@
               }
             ],
             "url": "{{baseUrl}}/admin/orders?status=pending_payment"
+          }
+        },
+        {
+          "name": "Require a token for Inventory Advisor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(401));",
+                  "const envelope = pm.response.json(); pm.test('Consistent envelope', () => pm.expect(envelope.success).to.equal(pm.response.code < 400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/ai/inventory"
+          }
+        },
+        {
+          "name": "Reject customer access to Inventory Advisor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(403));",
+                  "const envelope = pm.response.json(); pm.test('Consistent envelope', () => pm.expect(envelope.success).to.equal(pm.response.code < 400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/ai/inventory"
+          }
+        },
+        {
+          "name": "Analyze inventory as admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "const envelope = pm.response.json(); pm.test('Consistent envelope', () => pm.expect(envelope.success).to.equal(pm.response.code < 400));",
+                  "pm.test('Inventory report uses verified metrics', () => { const data = envelope.data; pm.expect(data.policy.salesDays).to.equal(30); pm.expect(data.aiAssisted).to.be.a('boolean'); pm.expect(data.summary.productsAnalyzed).to.be.a('number'); pm.expect(data.recommendations).to.be.an('array'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/ai/inventory"
           }
         }
       ]

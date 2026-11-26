@@ -7,13 +7,16 @@ import { controllers } from './controllers/api.js';
 import { apiRoutes } from './routes/api.js';
 import { authMiddleware, errorHandler, requestId } from './middleware/http.js';
 import { HttpError } from './utils/http.js';
+import { createGemini } from './services/gemini.js';
+import { createShoppingAssistant } from './services/shopping.js';
+import { createInventoryAdvisor } from './services/inventoryAdvisor.js';
 
 const referencePage = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carry &amp; Co. API</title><link rel="stylesheet" href="/api-docs/assets/swagger-ui.css"></head><body>
 <div id="swagger-ui"></div><script src="/api-docs/assets/swagger-ui-bundle.js"></script><script src="/api-docs/init.js"></script></body></html>`;
 const referenceSpec = fileURLToPath(new URL('../openapi.yaml', import.meta.url));
 
-export function createApp({ db, gateway, checkout, discover, secret, origins, trustProxy }) {
+export function createApp({ db, gateway, checkout, discover, aiOptions = {}, secret, origins, trustProxy }) {
   const app = express();
   if (trustProxy) app.set('trust proxy', trustProxy);
   app.disable('x-powered-by');
@@ -27,7 +30,10 @@ export function createApp({ db, gateway, checkout, discover, secret, origins, tr
       callback(new HttpError(403, 'ORIGIN_NOT_ALLOWED', 'This origin is not allowed.'));
     },
   }));
-  const api = controllers({ db, gateway, checkout, discover, secret });
+  const gemini = createGemini(aiOptions);
+  const shoppingAssistant = createShoppingAssistant(db, gemini);
+  const inventoryAdvisor = createInventoryAdvisor(db, gemini);
+  const api = controllers({ db, gateway, checkout, discover, shoppingAssistant, inventoryAdvisor, secret });
   app.use('/api/v1', (req, res, next) => {
     const catalog = req.method === 'GET' && /^\/(?:products(?:\/[^/]+)?|categories)\/?$/.test(req.path);
     res.setHeader('Cache-Control', catalog ? 'public, max-age=0, must-revalidate' : 'no-store');

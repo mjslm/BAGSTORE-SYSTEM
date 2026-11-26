@@ -251,9 +251,9 @@ input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; accent-col
 .product-grid .skeleton { aspect-ratio: 4 / 4.55; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
-.admin-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
-.admin-nav a { min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 5px; background: var(--white); font-size: .875rem; }
-.admin-nav a.active { background: var(--ink); color: var(--white); }
+.admin-nav, .ai-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+.admin-nav a, .ai-nav a { min-height: 44px; padding: 0 10px; display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 5px; background: var(--white); font-size: .875rem; }
+.admin-nav a.active, .ai-nav a.active { background: var(--ink); color: var(--white); }
 .dashboard-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 10px 0 14px; }
 .dashboard-grid > div { padding: 11px; background: var(--sage); border-radius: 5px; }
 .dashboard-grid dt { font-size: .875rem; }
@@ -308,3 +308,36 @@ input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; accent-col
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* AI shopping and inventory tools */
+.assistant-page { max-width: 800px; }
+.assistant-examples h2 { font-size: 1.25rem; }
+.example-questions { display: flex; flex-wrap: wrap; gap: 8px; }
+.example-questions .button { text-align: left; white-space: normal; }
+.chat-history { display: grid; gap: 16px; margin-bottom: 16px; }
+.chat-turn { display: grid; gap: 8px; min-width: 0; }
+.chat-question { justify-self: end; max-width: 88%; background: var(--ink); color: var(--white); padding: 12px 15px; border-radius: 13px 13px 3px 13px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.chat-answer { min-width: 0; background: var(--white); border: 1px solid var(--line); border-radius: 13px 13px 13px 3px; padding: 13px; }
+.ai-reply-label { display: flex; align-items: center; gap: 7px; font-size: .875rem; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+.chat-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-products { display: grid; gap: 7px; list-style: none; padding: 0; margin: 13px 0 0; }
+.chat-products a { display: flex; align-items: center; gap: 10px; min-height: 70px; border: 1px solid var(--line); border-radius: 5px; padding: 7px; }
+.chat-products a:hover { background: var(--sage); }
+.chat-products a > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.chat-products small { display: block; }
+.chat-product-image { width: 58px; height: 64px; flex: 0 0 58px; display: block; overflow: hidden; border-radius: 3px; }
+.chat-product-image img { width: 100%; height: 100%; object-fit: cover; }
+.assistant-form .section-title { margin-bottom: 0; }
+.product-assistant-link { gap: 7px; }
+.advisor-actions { margin-top: 14px; }
+.advisor-overview small { display: block; }
+.advisor-overview > small { margin-top: 8px; }
+.advisor-overview .section-title { flex-wrap: wrap; }
+.advisor-results > h3, .advisor-results > p { margin-bottom: 12px; }
+.advisor-item .section-title { align-items: flex-start; }
+.advisor-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px; background: var(--sage); border-radius: 5px; margin: 10px 0; }
+.advisor-facts dt { font-size: .8rem; color: var(--muted); }
+.advisor-facts dd { margin: 5px 0 0; font-weight: 700; font-size: 1.1rem; }
+.advisor-status.restock { background: #f5e4bd; color: #503b22; }
+.advisor-status.review { background: var(--sage); }
+@media (min-width: 700px) { .advisor-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

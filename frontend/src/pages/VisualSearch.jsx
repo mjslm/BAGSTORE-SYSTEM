@@ -85,7 +85,10 @@ export default function VisualSearch() {
     </form>
     <ErrorBox error={error} />
     {error && <Link className="text-link" to="/ai-assistant">Try Bag Finder</Link>}
-    {busy && <SkeletonLoader grid />}
+    {busy && <>
+      <p className="feedback" role="status">Gemini is checking your photo. If the service is busy, this may take up to 45 seconds.</p>
+      <SkeletonLoader grid />
+    </>}
     {result && <section className="recommendations" aria-live="polite">
       {!result.isBag ? <Empty title="No bag recognized" icon="camera"><p>Try a clear photo with the bag in view.</p></Empty> : <>
         <div className="summary-card"><h2>Photo analysis</h2><p>{result.description}</p></div>

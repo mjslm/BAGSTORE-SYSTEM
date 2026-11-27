@@ -1,129 +1,236 @@
 # Carry & Co. Bags Store
 
-Mobile React PWA and Express REST API. Customers can check laptop fit, add monograms on eligible bags, apply coupons, and track Maya Sandbox orders.
+A mobile-first e-commerce Progressive Web App for bags, built with React, Express and PostgreSQL. Carry & Co. combines laptop-fit shopping, personalized monograms, secure server-side checkout, Gemini-assisted discovery and an integrated administrator workspace.
 
 ## Live deployment
 
 | Service | URL |
 | --- | --- |
-| Storefront on Vercel | [carry-and-co.vercel.app](https://carry-and-co.vercel.app/) |
-| Backend on Render | [**carry-and-co-api**](https://carry-and-co-api.onrender.com/) |
-| API reference on Render | [carry-and-co-api.onrender.com/api-docs](https://carry-and-co-api.onrender.com/api-docs) |
+| Storefront (Vercel) | [carry-and-co.vercel.app](https://carry-and-co.vercel.app/) |
+| Backend (Render) | [carry-and-co-api.onrender.com](https://carry-and-co-api.onrender.com/) |
+| API health | [GET /api/v1/health](https://carry-and-co-api.onrender.com/api/v1/health) |
+| API documentation | [Swagger UI](https://carry-and-co-api.onrender.com/api-docs) |
 
-The deployed API base URL is `https://carry-and-co-api.onrender.com/api/v1`. [Check API health](https://carry-and-co-api.onrender.com/api/v1/health).
+API base URL: `https://carry-and-co-api.onrender.com/api/v1`
+
+## Features
+
+| Customer experience | Store administration |
+| --- | --- |
+| Account registration and sign-in | Role-protected store dashboard |
+| Product catalog, budget and laptop-fit filters | Product, category, coupon and inventory management |
+| Monogram personalization on eligible bags | Order management and fulfillment status |
+| Cart, discounts and Maya Sandbox checkout | Gross sales, pending payments and low-stock watchlist |
+| Order tracking and private notification inbox | Notifications and filterable activity logs |
+| Bag Finder, Shopping Assistant and Visual Bag Search | AI Inventory Advisor |
+| Responsive, installable PWA with cached public catalog | Responsive administrative interface |
+
+### AI tools
+
+All four tools use server-side Gemini configuration and current catalog or inventory data. Product IDs are validated against the database before being presented to shoppers.
+
+| Feature | API endpoint | Purpose |
+| --- | --- | --- |
+| Bag Finder | `POST /api/v1/ai/discover` | Match a natural-language prompt to in-stock bags using budget, laptop fit and other preferences. |
+| Shopping Assistant | `POST /api/v1/ai/assistant` | Answer catalog, shipping and monogram questions, including follow-ups. |
+| Visual Bag Search | `POST /api/v1/ai/visual-search` | Identify visible bag features in a photo and find similar available products. |
+| Inventory Advisor (admin) | `POST /api/v1/admin/ai/inventory` | Explain replenishment recommendations based on current stock and recent verified sales. |
+
+Visual Bag Search supports JPG, PNG and WebP uploads up to 10 MB. The browser resizes the photo before sending it; the API accepts up to 1 MiB of decoded image data. The app does not persist uploaded photos.
+
+Inventory Advisor calculates recommendations from the past 30 days of verified sales, targeting 14 days of demand with a minimum target of five units for products with sales. Low-stock products without recent sales require manual review. The report is read-only and does not automatically change inventory. Catalog/rules fallbacks are distinguished from actual AI-assisted responses.
+
+### Admin workspace and notifications
+
+- **Dashboard:** all-time gross sales, paid orders, awaiting payment, current low stock, the five most recent orders, inventory watchlist and recent activity.
+- **Notification inbox:** customers receive their own order and payment updates. Admins receive store order/payment updates and eligible low-stock alerts (4 or fewer units) and out-of-stock alerts. Individual and bulk mark-as-read actions are recipient-scoped. The unread badge refreshes on navigation and approximately every 30 seconds while the signed-in online tab is visible.
+- **Activity logs:** administrator-only history of orders, stock, product, category and coupon changes, including event, actor, reference and timestamp. Existing order/stock history is preserved; new notifications and catalog/coupon audit events are recorded after deployment.
+- Notifications are in-app updates, not email, SMS or browser push.
+
+## Technology and architecture
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, Vite, React Router, reusable components, context, hooks and responsive CSS |
+| Mobile PWA | Vite PWA and Workbox service worker |
+| Backend | Node.js, Express REST API, Zod validation, JWT authentication and bcrypt |
+| Database | Supabase PostgreSQL |
+| Payment | Maya Sandbox |
+| Artificial intelligence | Google Gemini |
+| API documentation and tests | OpenAPI/Swagger, Postman and Node.js integration tests |
+| Deployment | Vercel frontend, Render backend and Supabase database |
+
+The React frontend communicates with Express over a versioned JSON REST API. Express enforces authorization and owns pricing, coupon rules, stock reservations and payment confirmation. It connects to PostgreSQL, calls Gemini and manages Maya Sandbox checkout sessions. Signed Maya webhooks are verified before order updates.
+
+Core design patterns include MVC-style separation, the discount factory and strategies, and dependency composition in the checkout service.
 
 ## Project structure
 
-| Folder | What's inside |
+| Path | Responsibility |
 | --- | --- |
-| `frontend/src/` | React pages and components, auth and cart context, and the shared API client in `api/` |
-| `backend/src/` | Express routes and controllers, middleware and validators, business services, and payment and discount patterns |
-| `backend/src/repositories/` and `backend/src/config/schema.sql` | PostgreSQL queries and table definitions |
-| `backend/tests/` and `backend/openapi.yaml` | Integration tests and the OpenAPI specification |
-| `postman/` | API test collection and a shareable environment template |
-
-The Vercel storefront calls the Render API over HTTPS with JSON and uses a bearer token for signed-in requests. Express connects to Supabase PostgreSQL, calls Gemini for Bag Finder, Shopping Assistant, Visual Bag Search, and Inventory Advisor, and creates Maya Sandbox checkouts. Maya sends signed payment events back to the Render webhook at `/api/v1/webhooks/maya`. Express verifies the events before updating order records.
+| `frontend/src/` | React pages, UI components, routing, contexts, hooks and API client |
+| `frontend/public/` | Product images, fonts and app icons |
+| `frontend/vite.config.js` | Local API proxy, PWA manifest and service worker configuration |
+| `backend/src/routes/` and `controllers/` | REST routing and HTTP request handling |
+| `backend/src/services/` and `patterns/` | Business logic, checkout, AI and discount strategies |
+| `backend/src/repositories/` and `config/schema.sql` | PostgreSQL queries and schema |
+| `backend/tests/` and `backend/openapi.yaml` | Integration tests and API specification |
+| `postman/` | Postman collection and shareable environment template |
+| `docs/` | Application walkthrough, integration notes and test plan |
 
 ## Run in VS Code
 
-Use Node.js 22.12 or later. Open the folder containing `backend` and `frontend` in VS Code.
+Use Node.js 22.12 or newer. Open the project root containing both `backend` and `frontend`.
 
-### First-time backend setup
+### 1. Backend configuration
 
-From the project root, install the backend dependencies, create the local `.env` if needed, and generate a JWT secret.
+Right-click the **backend** folder and select **Open in Integrated Terminal**.
 
 ```powershell
-cd backend
 npm.cmd ci
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+Test-Path .env
+```
+
+If recovering an existing installation, copy the saved private `backend/.env` into this folder. Do not overwrite existing valid credentials or change the JWT secret unnecessarily. A source-only archive includes `.env.example`, not private values.
+
+For a fresh configuration only:
+
+```powershell
+Copy-Item .env.example .env
 node -p "require('node:crypto').randomBytes(48).toString('hex')"
 ```
 
-1. Paste the random value into `JWT_SECRET` in `backend/.env`. Keep `FRONTEND_URL=http://localhost:5173` for local development.
-2. In Supabase, open **Connect** and copy the **Session pooler** connection string. Put it in `DATABASE_URL` with your URL-encoded database password. Add `?sslmode=verify-full&sslrootcert=supabase-ca.crt` after `/postgres`. If the connection string already has an `sslmode` parameter, replace it. The public certificate is in the `backend` folder. [Supabase connection guide](https://supabase.com/docs/guides/database/psql)
-3. For a **new demo database**, set `SEED_ADMIN_PASSWORD` and `SEED_CUSTOMER_PASSWORD` to private passwords of 12–72 bytes. Run `npm.cmd run seed` once from `backend`. Repeat runs add missing demo records. Existing accounts keep their current passwords.
+Set the generated value as `JWT_SECRET` and configure the environment using the table below.
 
-Keep `backend/.env` private and use `.env.example` as the template shared with the project.
+| Backend variable | Purpose |
+| --- | --- |
+| `PORT` | Local API port (4000) |
+| `FRONTEND_URL` | Local storefront origin: `http://localhost:5173` |
+| `JWT_SECRET` | Private JWT signing secret, at least 32 characters |
+| `DATABASE_URL` | Private Supabase PostgreSQL connection string |
+| `MAYA_PUBLIC_KEY`, `MAYA_SECRET_KEY` | Maya Sandbox checkout configuration |
+| `MAYA_WEBHOOK_PUBLIC_KEY_1`, `MAYA_WEBHOOK_PUBLIC_KEY_2` | Maya Sandbox webhook signing verification keys |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Server-side Gemini configuration (default model: `gemini-3.1-flash-lite`) |
+| `SEED_ADMIN_PASSWORD`, `SEED_CUSTOMER_PASSWORD` | Private seed-account passwords for a new database |
 
-### Start the app
+In Supabase, use **Connect → Session pooler**. Set `DATABASE_URL` with the URL-encoded database password and `sslmode=verify-full&sslrootcert=supabase-ca.crt`. Do not duplicate an existing sslmode parameter. The public CA certificate is included in `backend/`. See the [Supabase connection guide](https://supabase.com/docs/guides/database/psql).
 
-Open two PowerShell terminals at the project root. In the first, start the API.
+For a **new demo database only**, set seed passwords of 12–72 bytes, then run `npm.cmd run seed` from the backend folder. Repeat runs add missing demo records; existing accounts keep their passwords. Do not reset or reseed an established database for routine startup. Backend startup creates new schema tables idempotently.
+
+Keep `.env` and private keys out of GitHub and the public frontend.
+
+### 2. Start the backend
+
+In the backend terminal:
 
 ```powershell
-cd backend
 npm.cmd run dev
 ```
 
-In the second, start the storefront. Run `npm.cmd ci` on the first setup or after the lockfile changes.
+Wait for `Carry & Co. API listening on port 4000`. Open [local API health](http://localhost:4000/api/v1/health) to verify `data.status: "ok"`.
+
+### 3. Start the frontend
+
+Open a separate integrated terminal in the **frontend** folder.
 
 ```powershell
-cd frontend
 npm.cmd ci
 npm.cmd run dev
 ```
 
-Open the [storefront](http://localhost:5173), [API health check](http://localhost:4000/api/v1/health), or [Swagger UI](http://localhost:4000/api-docs).
+If dependencies are already installed and the lockfile is unchanged, skip `npm.cmd ci`. Do not run `cd frontend` again when the terminal is already in that folder.
 
-To test the production service worker locally, keep the API running and run `npm.cmd run build` followed by `npm.cmd run preview` from `frontend`. Open the [production preview](http://localhost:4173).
+Keep both terminals running. Open [localhost:5173](http://localhost:5173/) and [local Swagger UI](http://localhost:4000/api-docs).
 
-### Demo accounts
+The default local frontend API URL is `/api/v1` (also in `frontend/.env.example`). Vite proxies this path to `http://localhost:4000`.
 
-| Account | Email | Password |
+### Demo accounts and coupons
+
+| Account | Email | Password configuration |
 | --- | --- | --- |
 | Customer | jamie@carry.test | `SEED_CUSTOMER_PASSWORD` |
 | Customer | alex@carry.test | `SEED_CUSTOMER_PASSWORD` |
 | Administrator | admin@carry.test | `SEED_ADMIN_PASSWORD` |
 
-Try `CARRY10` for 10% off qualifying orders, `PACK100` for ₱100 off qualifying orders, and `OLDDEAL` to see an expired coupon. Shipping is ₱120. Amounts use integer centavos, and percentage discounts round down to the nearest centavo.
+Use the passwords configured when these accounts were seeded. Try `CARRY10` for 10% off qualifying orders, `PACK100` for ₱100 off qualifying orders and `OLDDEAL` for an expired-coupon case. Shipping is ₱120. Server amounts are integer centavos; percentage discounts round down to the nearest centavo.
 
-## Maya Sandbox and AI features
+### Local troubleshooting
 
-- Set `MAYA_PUBLIC_KEY` and `MAYA_SECRET_KEY` using your Maya Sandbox credentials. Register your API's public HTTPS URL ending in `/api/v1/webhooks/maya` for `PAYMENT_SUCCESS`, `PAYMENT_FAILED`, `PAYMENT_CANCELLED`, and `PAYMENT_EXPIRED`. Set `MAYA_WEBHOOK_PUBLIC_KEY_1` and `MAYA_WEBHOOK_PUBLIC_KEY_2` to the Sandbox signing keys. The app accepts each key as a single line of Base64 or as a PEM with literal `\n` between its lines. [Maya Checkout webhook guide](https://developers.maya.ph/reference/configuring-your-webhook-for-maya-checkout)
-- Set `GEMINI_API_KEY` in the backend environment. `GEMINI_MODEL` defaults to `gemini-3.1-flash-lite`. Without credentials, Bag Finder returns a controlled 503, while Shopping Assistant and Inventory Advisor show their fallback results and Visual Bag Search offers a catalog alternative.
+| Symptom | Resolution |
+| --- | --- |
+| Cannot find `frontend/frontend` | The terminal is already inside the frontend folder. |
+| Vite `ECONNREFUSED` | Check that the backend is running on port 4000 and its health endpoint responds. |
+| `.env not found` or missing JWT secret | Restore the correct private backend `.env` and verify with `Test-Path .env`. |
+| Maya payment failed | Verify the order status before retrying; restore eligible failed order items to the cart. Use official Sandbox test cards only. |
+| AI unavailable or fallback | Check the server configuration and connectivity; distinguish catalog/rules fallback from live Gemini output. |
 
-### AI Shopping Assistant, Visual Bag Search, and Inventory Advisor
+## Payment integration
 
-- Open **AI tools → Shopping Assistant** to ask about current bag prices, features, laptop fit, monograms, and shipping. Follow-up questions use recent conversation context. The assistant uses public catalog data and returns product links. Its API is `POST /api/v1/ai/assistant`.
-- Open **AI tools → Visual Bag Search**, choose a JPG, PNG or WebP photo (up to 10 MB), and select Find similar bags. The browser resizes the photo to a JPEG before sending it. Gemini identifies visible bag features and matches them to available catalog descriptions. The API (`POST /api/v1/ai/visual-search`) accepts up to 1 MiB of decoded image data and verifies returned product IDs.
-- Sign in as an admin and open **Admin → Inventory Advisor → Analyze inventory**. The API (`POST /api/v1/admin/ai/inventory`) uses available stock and confirmed payments from the last 30 days. It estimates a 14-day stock target, with a minimum of five units for products with recent sales. Low stock without sales is flagged for manual review.
-- All AI features use the existing server-side Gemini configuration. During provider failure, the Shopping Assistant shows a catalog help message and the Inventory Advisor returns its calculated inventory recommendations. Generating an advisor report does not change stock.
+Configure the server with Maya Sandbox credentials and register the publicly reachable HTTPS webhook endpoint `/api/v1/webhooks/maya` for the success, failure, cancellation and expiry events. Set the provider verification public keys as Base64 or PEM with literal escaped newlines. See the [Maya Checkout webhook guide](https://developers.maya.ph/reference/configuring-your-webhook-for-maya-checkout).
 
-## Tests
+The server reserves inventory, creates a checkout session and verifies the order reference, status, amount and currency before marking an order paid. Repeated checkout keys and webhook events are handled without double counting. Confirmed terminal failures release reserved stock. Return verification can work locally even if a webhook cannot reach localhost directly.
 
-See the [test plan](docs/test-plan.md) for the Postman demo cases, expected results, and previous test runs.
+Use [official Maya Sandbox test instruments](https://developers.maya.ph/reference/testing-and-validating-your-maya-checkout-integration); never enter a real card. A successful browser redirect alone is not proof of payment.
 
-For backend integration tests, set `TEST_DATABASE_URL` in your terminal to a test PostgreSQL database with permission to create a schema. Run `npm.cmd test` from `backend`. The suite creates and removes its own test schema and uses controlled provider responses.
+## Progressive Web App
 
-For manual API tests, import `postman/collection.json` and `postman/environment.example.json`. Point `baseUrl` to your test API and set `customerPassword` and `adminPassword` to the passwords used to seed that test database. Run the full collection against a disposable, seeded database because it creates orders and changes inventory.
+The storefront supports installation, responsive navigation, cached public catalog data and images, and an offline indicator. Online services such as checkout, account verification, admin changes, notifications and Gemini require network access.
+
+To test the production service worker, keep the API running, open a frontend terminal and run:
+
+```powershell
+npm.cmd run build
+npm.cmd run preview
+```
+
+Open [localhost:4173](http://localhost:4173/), visit the catalog online, then test offline browsing. For live quality checks, use the deployed HTTPS storefront and Chrome Lighthouse.
+
+## API documentation and testing
+
+- Swagger UI: [local](http://localhost:4000/api-docs) · [deployed](https://carry-and-co-api.onrender.com/api-docs)
+- OpenAPI specification: [backend/openapi.yaml](backend/openapi.yaml)
+- Postman: [collection](postman/collection.json) · [environment template](postman/environment.example.json)
+
+For backend integration tests, set `TEST_DATABASE_URL` to a disposable PostgreSQL database with permission to create a schema. Run `npm.cmd test` from the backend terminal. The suite creates and removes its own test schema and uses controlled provider responses.
+
+For Postman, import both JSON files, choose the test API base URL, use the seeded test passwords and set provider expectation flags to match the test environment. Run the full collection against a disposable database only; it creates records and changes stock.
+
+### Latest recorded verification
+
+November 27, 2026 — merged application revision `9e3de18` (PR #9). Verified on an isolated PostgreSQL database with controlled Maya/Gemini responses.
+
+| Check | Result |
+| --- | --- |
+| Frontend production build | Passed |
+| Backend integration tests | 18/18 passed |
+| Postman requests | 53/53 completed |
+| Postman assertions | 118/118 passed |
+| OpenAPI operations | 41 documented |
+| Dashboard, activity and both notification inboxes | Passed responsive checks at nine widths |
+
+These are local verification results, not a claim that live provider credentials or current deployed Lighthouse scores were retested. See [test plan](docs/test-plan.md) for scope and live verification checkpoints.
 
 ## Deploy on Vercel and Render
 
-Use this GitHub repository for both deployments and your existing Supabase project for the database. If you use a new database for the demo, point your local backend at that database and run `npm.cmd run seed` from `backend` before deploying.
+Use the repository for both deployments with Supabase PostgreSQL for persistence.
 
 | Setting | Vercel storefront | Render API |
 | --- | --- | --- |
 | Root directory | `frontend` | `backend` |
-| Framework or runtime | Vite | Node |
+| Framework/runtime | Vite | Node |
 | Build command | `npm run build` | `npm ci` |
-| Output directory | `dist` | |
-| Start command | | `npm start` |
-| Health check path | | `/api/v1/health` |
+| Output directory | `dist` | — |
+| Start command | — | `npm start` |
+| Health check path | — | `/api/v1/health` |
 
-1. Deploy the frontend on Vercel first to get its production HTTPS URL. [Vercel root directory setup](https://vercel.com/docs/monorepos)
-2. Create a Render **Web Service**. Set `NODE_ENV=production`, set `FRONTEND_URL` to the Vercel HTTPS origin, and add `DATABASE_URL` with the same certificate options used locally. Set `JWT_SECRET` and the Maya and Gemini settings in Render's environment. Render supplies `PORT`. If the database already has the demo accounts and catalog, skip seeding. Open the Render URL with `/api/v1/health` appended and check for `"status":"ok"`. [Render Express setup](https://render.com/docs/deploy-node-express-app)
-3. In Vercel, set `VITE_API_BASE_URL` to the Render HTTPS URL followed by `/api/v1`. Redeploy the storefront to apply the value. [Vercel environment variables](https://vercel.com/docs/environment-variables)
-4. Open the Vercel URL and check the catalog, sign-in, and Bag Finder. Register the Maya Sandbox webhook and verify that a test order reaches **Paid**.
+1. Deploy the frontend on Vercel to obtain the production HTTPS origin. [Vercel root directory setup](https://vercel.com/docs/monorepos)
+2. Create a Render web service. Set `NODE_ENV=production`, `FRONTEND_URL` to the Vercel HTTPS origin, and configure the private database, JWT, Maya and Gemini variables on Render. Render provides `PORT`. Existing databases do not require a fresh seed. Check `/api/v1/health`. [Render Express setup](https://render.com/docs/deploy-node-express-app)
+3. Set Vercel's `VITE_API_BASE_URL` to the Render HTTPS API URL followed by `/api/v1`, and redeploy. [Vercel environment variables](https://vercel.com/docs/environment-variables)
+4. Verify storefront, sign-in, four AI tools, admin dashboard, notification inbox and activity logs. Register the Maya Sandbox webhook and confirm a test order reaches Paid through verified payment details.
 
-## Submission and defense
+## Documentation
 
-- Use the [demo checklist](docs/demo-checklist.md) for the presentation order and the [integration notes](docs/integration-notes.md) when explaining Gemini and Maya Sandbox.
-- Name the archive `ITPE101_FINAL_<SECTION>_CARRYANDCO.zip` using your actual section or the name your instructor assigns. Include both `package-lock.json` files and both `.env.example` templates. Exclude `node_modules`, `dist`, `.env` files with real values, and local database data.
-- Extract the archive to a fresh folder and follow the setup steps above with a demo database. Check the storefront, Swagger, and Postman before presenting.
-- Keep a backup screen recording in case the internet or a hosting service is unavailable. Use demo accounts and Maya Sandbox test cards, and keep personal data and credentials out of the recording.
-
-### Admin workspace and notifications
-
-- **Admin → Dashboard** shows all-time paid sales, paid and unpaid order counts, current low stock, five recent orders and four recent activity events. Existing payments and inventory rules are unchanged.
-- The bell in the header opens a private, read/unread notification inbox for the signed-in account. Customers receive their own order/payment updates. Admins receive store order/payment updates and alerts when available stock crosses the low-stock threshold (4 units) or reaches zero. The unread badge refreshes on navigation and every 30 seconds while the tab is visible.
-- **Admin → Activity logs** lists order status, inventory adjustments, product changes, category changes and coupon changes with event type, reference, actor and time. Only administrators may access the feed. Existing order/stock histories are reused; catalog/coupon activity and notifications are recorded from this release onward.
-- Restart the backend to create the two new tables automatically. No database reset, seed rerun or new environment variables are needed. Notifications are in-app, not email, SMS or browser push.
+- [Application walkthrough](docs/demo-checklist.md)
+- [Architecture and integration notes](docs/integration-notes.md)
+- [Testing and verification](docs/test-plan.md)
+- [Frontend PWA setup](frontend/README.md)

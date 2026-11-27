@@ -11,7 +11,7 @@ export default function StoreHeader() {
     <div className="shipping-bar">₱120 flat-rate shipping</div>
     <div className="header-inner">
       <Link to="/" className="wordmark" aria-label="Carry &amp; Co. home">
-        <span className="brand-mark"><Icon name="bag" size={19} /></span>
+        <span className="brand-mark"><img src="/icons/carry-co-mark-96.png" width={35} height={35} alt="" /></span>
         <span>Carry <span className="brand-amp">&amp;</span> Co.</span>
       </Link>
       <nav className="desktop-nav" aria-label="Main navigation">

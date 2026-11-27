@@ -85,3 +85,6 @@ export const visualSearch = z.object({
   if (mimeType === 'image/png') return bytes.length >= 33 && bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && bytes.toString('ascii', 12, 16) === 'IHDR';
   return bytes.length >= 16 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP' && bytes.readUInt32LE(4) + 8 === bytes.length;
 }, { path: ['data'], message: 'Upload a valid JPG, PNG or WebP image up to 1 MB.' });
+
+export const notifications = paging.extend({ unread: z.enum(['true','false']).optional() });
+export const activity = paging.extend({ category: z.enum(['orders','inventory','products','categories','coupons']).optional() });

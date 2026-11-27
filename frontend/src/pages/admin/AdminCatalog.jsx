@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, endpoint } from '../../api/client.js';
+import { useNotifications } from '../../context/NotificationsContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useRequest } from '../../hooks/useRequest.js';
 import { ErrorBox, Pagination, SkeletonLoader } from '../../components/Feedback.jsx';
@@ -54,7 +55,8 @@ export default function AdminCatalog({ mode }) {
   const [message, setMessage] = useState('');
   const result = useRequest(endpoint(base, isProduct ? { page } : {}), { token, reload });
   const categories = useRequest('/admin/categories', { token, enabled: isProduct });
-  const saved = () => setReload((n) => n + 1);
+  const { refresh: refreshNotifications } = useNotifications();
+  const saved = () => { setReload((n) => n + 1); refreshNotifications(); };
 
   function edit(row) {
     setError(null);

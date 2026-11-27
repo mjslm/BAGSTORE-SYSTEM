@@ -1,5 +1,10 @@
 export default function Icon({ name, size = 20, ...props }) {
   let paths = {
+    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></>,
+    history: <><path d="M3 12a9 9 0 1 1 2 5.7M3 5v7h7"/><path d="M12 7v5l3 2"/></>,
+    wallet: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18m-6 6h3"/></>,
+    refresh: <><path d="M20 6v6h-6M4 18v-6h6"/><path d="M5 9a8 8 0 0 1 13-3l2 6M19 15a8 8 0 0 1-13 3l-2-6"/></>,
+    check: <path d="m5 12 5 5L20 7"/>,
     bag: <><path d="M5 7h14l1 14H4L5 7Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></>,
     chat: <><path d="M20 11a8 8 0 0 1-8 8H5l1.5-4A8 8 0 1 1 20 11Z"/><path d="M9 11h6m-6-3h4"/></>,
     tag: <><path d="m3 4 10 0 8 8-9 9-9-9V4Z"/><circle cx="8" cy="8" r="1.4"/></>,

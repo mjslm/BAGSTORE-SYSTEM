@@ -1,3 +1,4 @@
+import { notifyOrder, recentActivity } from '../repositories/activity.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { all, one, orderById, orderHistory, orderItems, page } from '../repositories/store.js';
 import { conflict, HttpError, requireValue } from '../utils/http.js';
@@ -59,6 +60,7 @@ export async function getOrder(db, id, user) {
 
 async function history(db, id, status, actor) {
   await db.query('INSERT INTO order_history (order_id,status,actor) VALUES ($1,$2,$3)', [id, status, actor]);
+  await notifyOrder(db, id, status);
 }
 
 async function changeOrder(db, order, status, actor) {
@@ -304,5 +306,11 @@ export async function dashboard(db) {
   const lowStock = await all(db, 'SELECT id,name,stock FROM products WHERE active AND deleted_at IS NULL AND stock<=4 ORDER BY stock,name LIMIT 20');
   const webhookReview = await one(db, "SELECT count(*)::int AS total FROM webhook_events WHERE state='needs_review'");
   const flagged = await one(db, 'SELECT count(*)::int AS total FROM orders WHERE payment_flag IS NOT NULL');
-  return { ...summary, gross: Number(summary.gross), lowStock, flagged: flagged.total, webhookReview: webhookReview.total };
+  const [stockCount, recentOrders, activity] = await Promise.all([
+    one(db, 'SELECT count(*)::int AS total FROM products WHERE active AND deleted_at IS NULL AND stock<=4'),
+    all(db, 'SELECT id,status,total_cents,currency,created_at FROM orders ORDER BY created_at DESC,id LIMIT 5'),
+    recentActivity(db),
+  ]);
+  return { ...summary, gross: Number(summary.gross), lowStock, lowStockCount: stockCount.total,
+    recentOrders, activity, flagged: flagged.total, webhookReview: webhookReview.total };
 }

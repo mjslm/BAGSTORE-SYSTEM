@@ -68,3 +68,7 @@ Use these tests to show checks beyond a single Postman response. One of two conc
 Use the [deployed storefront](https://carry-and-co.vercel.app/) to verify the live integrations during your demo. Try **Bag Finder** with “A bag for my 16-inch laptop under ₱2,000” and compare the results with the catalog. Products can come from the catalog fallback during a Gemini timeout, so check `aiAssisted` in the API response when demonstrating a Gemini-assisted result. For the payment check, use a test account and a Maya Sandbox test card, then confirm the order reaches **Paid** in the storefront.
 
 After a new run, record the date, environment, case or suite, expected result, actual result, and pass or fail. Keep screenshots or reports free of credentials and tokens.
+
+## Admin workspace, notifications and activity
+
+The API tests cover recipient-scoped notification lists, unread counts, single/all read actions, rejection of another recipient's notification ID, admin-only activity access, checkout replay and payment verification deduplication, low-stock and out-of-stock alerts, order status notifications, filtered audit history, dashboard summaries, and idempotent schema startup. The Postman collection includes a **Notifications and activity** group. Use a disposable test database; no real customer notifications are sent.

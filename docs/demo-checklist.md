@@ -21,3 +21,10 @@ Keep this page open during the defense. Use the [test plan](test-plan.md) for ex
 - [ ] **Show Visual Bag Search.** Choose a photo of a tote or backpack and display the returned photo analysis and similar available bags. Open a product to show the actual catalog price and details.
 - [ ] **Show Inventory Advisor.** Sign in as admin, open Inventory Advisor, and click Analyze inventory. Explain the 30-day verified sales period, suggested reorder quantities, and the manual stock update in Products.
 - [ ] **Show Maya Sandbox checkout.** Use a demo account and a sandbox test card. Return to Carry & Co. and show the order status. If the order is pending, click **Check payment status**. A confirmed payment appears as **Paid**.
+
+## Admin dashboard, inbox and activity demo
+
+- [ ] Sign in as admin. Open Dashboard and review the verified sales, pending payments, low-stock watchlist, recent orders, and recent activity.
+- [ ] In a disposable demo database, adjust an active product from five or more available units to four or fewer. Open the admin bell to see the low-stock notification; mark it read.
+- [ ] In a separate customer session, create an order and verify a sandbox payment, then advance the order as admin. Open each inbox: the customer sees their own order only; the admin sees store updates.
+- [ ] Open Activity logs, filter by Orders, Inventory, or Products, and explain that the actor, reference and timestamp are recorded with the committed change. Product/category/coupon activity begins when the update is deployed; order and stock history remains available.

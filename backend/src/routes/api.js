@@ -33,7 +33,12 @@ export function apiRoutes(c, auth) {
   api.post('/ai/discover', aiLimit, c.discover);
   api.post('/ai/assistant', aiLimit, c.shoppingAssistant);
   api.post('/ai/visual-search', limit(6), c.visualSearch);
+  api.get('/notifications', auth, c.notifications);
+  api.get('/notifications/unread-count', auth, c.unreadNotifications);
+  api.patch('/notifications/read-all', auth, c.readAllNotifications);
+  api.patch('/notifications/:id/read', auth, c.readNotification);
   admin.use(auth, requireAdmin);
+  admin.get('/activity', c.activity);
   admin.get('/dashboard', c.dashboard);
   admin.post('/ai/inventory', limit(5), c.inventoryAdvisor);
   admin.get('/products', c.adminProducts);

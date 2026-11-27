@@ -2,11 +2,13 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import Icon from './Icon.jsx';
+import { useNotifications } from '../context/NotificationsContext.jsx';
 import InstallButton from './InstallButton.jsx';
 
 export default function StoreHeader() {
   const { user } = useAuth();
   const { count } = useCart();
+  const { unread } = useNotifications();
   return <header className="site-header">
     <div className="shipping-bar">₱120 flat-rate shipping</div>
     <div className="header-inner">
@@ -25,6 +27,9 @@ export default function StoreHeader() {
         <InstallButton />
         <Link className="header-search" aria-label="Search bags" to="/products?search=open"><Icon name="search" size={21} /></Link>
         <NavLink className="mobile-orders" to="/orders">Orders</NavLink>
+        {user && <NavLink className="header-notifications" to="/notifications" aria-label={unread == null ? 'Notifications' : 'Notifications, ' + unread + ' unread'}>
+          <Icon name="bell" size={22} />{unread > 0 && <span className="notification-counter" aria-hidden="true">{unread > 99 ? '99+' : unread}</span>}
+        </NavLink>}
         <NavLink className="desktop-action" to={user ? '/account' : '/login'}><Icon name="person" size={20} /> Account</NavLink>
         <NavLink className="desktop-action" to="/cart" aria-label={'Bag, ' + count + ' items'}>
           <Icon name="bag" size={20} /> Bag <span className="header-count" aria-hidden="true">{count}</span>

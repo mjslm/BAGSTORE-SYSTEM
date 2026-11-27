@@ -1,74 +1,156 @@
-# Carry & Co. test plan
+# Carry & Co. — API and application test plan
 
-Use this plan to choose demo requests, check the expected responses, and record the outcome of a new run. It covers the REST API, customer and admin access, checkout, Maya Sandbox, and the four AI features.
+**Updated:** November 27, 2026 — features through PR #9
 
-## Choose a test environment
+This plan covers the REST API, business rules, Maya Sandbox, all four Gemini tools, admin dashboard, notification inbox, activity logs and mobile PWA. Use the [demo checklist](demo-checklist.md) to present the system and the [integration notes](integration-notes.md) to explain the implementation.
+
+## 1. Test safely
 
 | Environment | Postman `baseUrl` | What to run |
 | --- | --- | --- |
-| Local test API | `http://localhost:4000/api/v1` | Full collection with a fresh, disposable seeded PostgreSQL database |
-| Live API on Render | `https://carry-and-co-api.onrender.com/api/v1` | Individual read-only checks, such as API health and the catalog |
+| Local disposable test database | `http://localhost:4000/api/v1` | Full collection, automated tests and state-changing demonstration |
+| Live Render/Supabase deployment | `https://carry-and-co-api.onrender.com/api/v1` | Individual read-only health/catalog checks; dedicated authorized sandbox demo orders only |
 
-Postman appends the paths below to `baseUrl`. For example, **System › API health** sends `GET {{baseUrl}}/health`. The [Swagger UI](https://carry-and-co-api.onrender.com/api-docs) shows the full API contract, and the [Express route file](../backend/src/routes/api.js) shows where the main routes are registered. The [Maya webhook route](../backend/src/app.js) is registered in the app entry point.
+The full collection creates users and orders, changes stock and removes temporary products. Do not point it at the shared live store database. Use a disposable seeded database with demo data, never actual customer shipping or payment information.
 
-## Run the Postman collection
+Start the local backend and frontend as documented in the [README](../README.md#run-in-vs-code). Confirm [local API health](http://localhost:4000/api/v1/health) before opening the storefront. The [Swagger UI](https://carry-and-co-api.onrender.com/api-docs) describes the API contract; [routes](../backend/src/routes/api.js) and [the app entry point](../backend/src/app.js) register the endpoints.
 
-1. Point the local backend at a disposable database, seed it, and start the API using the [README setup steps](../README.md#run-in-vs-code). The full collection creates accounts and orders and changes product stock.
-2. Import [collection.json](../postman/collection.json) and [environment.example.json](../postman/environment.example.json). Select **Carry & Co. Local Sandbox** and set `baseUrl` to your local test API.
-3. Fill `customerPassword` and `adminPassword` with your seeded test account passwords. Match `sandboxConfigured` and `aiConfigured` to the test API. These flags choose which response Postman expects. The backend configuration controls the providers.
-4. Select **Carry & Co. API › Run**. Use one iteration and keep the request order. Sign-in requests set the tokens used by later requests, and checkout stores the order ID for replay and cancellation.
-5. Review **Test Results**. A request can pass with a `4xx` response when rejection is the expected outcome. A full run passes when all selected requests complete with zero failed assertions.
+## 2. Run the Postman collection
 
-## Postman cases to demonstrate
+1. Configure a disposable test database, seed demo data and start the local API. Keep the backend `.env` private.
+2. Import [collection.json](../postman/collection.json) and [environment.example.json](../postman/environment.example.json). Select **Carry & Co. Local Sandbox**, and verify `baseUrl` ends in `/api/v1`.
+3. Fill `customerPassword` and `adminPassword` with the seeded test passwords. Set `sandboxConfigured` and `aiConfigured` to match the API under test. These flags select expected responses; they do not enable provider access.
+4. Run **Carry & Co. API** with one iteration and the original request order. Login requests store customer/admin tokens; checkout stores an order ID and idempotency key for later requests.
+5. Review request results and assertions. An expected `401`, `403` or `422` is a passing result when the test explicitly checks rejection.
+6. Reset or recreate the disposable database before repeating the full run. Do not export populated token/password variables.
+
+## 3. Selected Postman cases to present
+
+All method/path entries below are relative to `baseUrl`. Request names match the supplied Postman collection.
+
+### Core store, access control and checkout
 
 | Postman request | Method and path | Expected result |
 | --- | --- | --- |
-| System › API health | `GET /health` | `200` with `data.status` equal to `ok` |
-| Catalog › Filter by laptop fit and budget | `GET /products` | `200` with up to three bags for a 15.6-inch laptop within the ₱2,000 budget |
-| Auth › Sign in as customer | `POST /auth/login` | `200`. Postman saves the customer token for later requests |
-| Cart › Require a token | `GET /cart` | `401` when no token is supplied |
-| Admin › Reject customer access | `GET /admin/dashboard` | `403` when the signed-in customer requests an admin endpoint |
-| Checkout › Reject expired coupon | `POST /checkout/quote` | `422` with the expired coupon error |
-| Checkout › Create a sandbox checkout | `POST /checkout` | `201` and `pending_payment` when Maya Sandbox is configured |
-| Checkout › Replay the same checkout key | `POST /checkout` | `200` with the same order ID for the same `Idempotency-Key` |
-| Maya webhooks › Reject absent signature | `POST /webhooks/maya` | `401` when the request has no webhook signature |
-| Discovery › Check AI or service fallback | `POST /ai/discover` | `200` when Bag Finder is configured and can return results, or `503` when the integration is unavailable |
-| Discovery › Ask the Shopping Assistant | `POST /ai/assistant` | `200` with answer, verified product references, and `aiAssisted` |
-| Discovery › Reject invalid bag photo | `POST /ai/visual-search` | `422` for invalid image data |
-| Discovery › Find similar bags by photo | `POST /ai/visual-search` | `200` with photo analysis and verified matches, or `503` if Gemini is unavailable |
-| Admin › Reject customer access to Inventory Advisor | `POST /admin/ai/inventory` | `403` when a signed-in customer requests the advisor |
-| Admin › Analyze inventory as admin | `POST /admin/ai/inventory` | `200` with stock, recent verified sales, and suggested reorder quantities |
-| Admin › Adjust and audit stock | `PATCH /admin/products/metro-daypack/stock` | `200`. The matching **Review recorded stock changes** request reads the adjustment log |
+| System › API health | `GET /health` | 200; `data.status: "ok"` |
+| Auth › Register a customer | `POST /auth/register` | 201; customer account |
+| Auth › Reject duplicate email | `POST /auth/register` | 409; duplicate email rejected |
+| Auth › Sign in as customer | `POST /auth/login` | 200; token saved |
+| Catalog › Filter by laptop fit and budget | `GET /products?laptop=15.6&maxPrice=200000&limit=3` | 200; up to three matching in-budget bags |
+| Cart › Require a token | `GET /cart` | 401; unauthenticated |
+| Cart › Reject unavailable quantity | `PATCH /cart` | 409; unavailable stock rejected |
+| Cart › Reject invalid initials | `PATCH /cart` | 422; invalid monogram |
+| Cart › Set one monogrammed bag | `PATCH /cart` | 200; eligible bag and monogram fee |
+| Checkout › Apply percentage coupon | `POST /checkout/quote` | 200; server-calculated discount |
+| Checkout › Reject expired coupon | `POST /checkout/quote` | 422; expired coupon rejected |
+| Checkout › Create a sandbox checkout | `POST /checkout` | 201; pending payment when Sandbox is configured |
+| Checkout › Replay the same checkout key | `POST /checkout` | 200; same order ID, no duplicate |
+| Orders › List customer orders | `GET /orders` | 200; signed-in customer's orders |
+| Maya webhooks › Reject absent signature | `POST /webhooks/maya` | 401; signature required |
+| Admin › Reject customer access | `GET /admin/dashboard` | 403; customer lacks admin role |
+| Admin › Read store dashboard | `GET /admin/dashboard` | 200; server-derived dashboard values |
+| Admin › Adjust and audit stock | `PATCH /admin/products/metro-daypack/stock` | 200; changed stock recorded |
+| Admin › Review recorded stock changes | `GET /admin/products/metro-daypack/stock` | 200; matching adjustment history |
 
-## Run backend integration tests
+### Gemini AI
 
-Set `TEST_DATABASE_URL` to a disposable PostgreSQL database where your account can create a schema. From `backend`, run `npm.cmd test` on Windows or `npm test` on macOS or Linux. The suite seeds its own test schema and removes it after the run. See [store.test.js](../backend/tests/store.test.js).
+| Postman request | Method and path | Expected result |
+| --- | --- | --- |
+| Discovery › Check AI or service fallback | `POST /ai/discover` | 200 with AI or catalog picks when configured; 503 if service is unavailable |
+| Discovery › Ask the Shopping Assistant | `POST /ai/assistant` | 200; answer, validated product references and `aiAssisted` |
+| Discovery › Reject invalid bag photo | `POST /ai/visual-search` | 422; invalid image data |
+| Discovery › Find similar bags by photo | `POST /ai/visual-search` | 200; image analysis and real product matches, or 503 if provider unavailable |
+| Admin › Require a token for Inventory Advisor | `POST /admin/ai/inventory` | 401; login required |
+| Admin › Reject customer access to Inventory Advisor | `POST /admin/ai/inventory` | 403; admin role required |
+| Admin › Analyze inventory as admin | `POST /admin/ai/inventory` | 200; verified sales, stock, policy and recommendations |
 
-Use these tests to show checks beyond a single Postman response. One of two concurrent checkouts can reserve the last item. A valid Maya event records one paid transition even if it arrives twice. A Gemini timeout returns matching in-stock products from the catalog. The tests control provider responses so these cases can run without contacting Maya or Gemini.
+### Notifications and activity
 
-## Results and live verification
+| Postman request | Method and path | Expected result |
+| --- | --- | --- |
+| Reject anonymous notifications | `GET /notifications` | 401; login required |
+| Customer notification inbox | `GET /notifications?limit=5` | 200; private paginated inbox |
+| Customer unread count | `GET /notifications/unread-count` | 200; nonnegative unread count |
+| Read all customer notifications | `PATCH /notifications/read-all` | 200; updated count for own inbox |
+| Admin notification inbox | `GET /notifications?unread=true` | 200; unread admin notifications only |
+| Reject customer activity access | `GET /admin/activity` | 403; admin role required |
+| Read admin activity log | `GET /admin/activity?category=inventory&limit=5` | 200; filtered inventory events |
 
-| Previous run on `e4367f8` | Recorded result |
+The full collection has 53 requests, including the prerequisites and additional validation/CRUD cases. The OpenAPI document describes 41 API operations; the collection also tests multiple outcomes against individual operations.
+
+## 4. Automated backend integration tests
+
+Set `TEST_DATABASE_URL` to a disposable PostgreSQL database that permits creating a schema. From the backend terminal:
+
+```powershell
+npm.cmd ci
+npm.cmd test
+```
+
+If dependencies are installed, skip `npm.cmd ci`. The suite creates a temporary test schema, seeds it and removes it after testing. It substitutes controlled Maya and Gemini responses; it does not need live provider calls. See [store.test.js](../backend/tests/store.test.js).
+
+| Coverage | What the automated tests verify |
 | --- | --- |
-| Postman CLI against the local Express test API and PostgreSQL, with controlled Maya and Gemini responses | 40 requests completed, 84 assertions passed, 0 failures |
-| Backend integration suite on a fresh test schema | 14 tests passed, 0 failures |
+| Auth and catalog | Password hashing, normalization, duplicate and bad credentials, protected routes, role checks, laptop/budget filtering and pagination |
+| Cart and pricing | Valid personalization, server-derived prices, coupon validation, checkout replay |
+| Inventory and concurrency | Only one checkout reserves the last unit; cancellation releases reservations; stock audit and soft deletion preserve references |
+| Maya | Lost checkout link recovery, signature/timestamp validation, payment event deduplication, reference/amount/currency checks, failed/expired payment rollback |
+| Admin CRUD | Product, category and coupon changes |
+| AI | Catalog-grounded Bag Finder and timeout fallback; Shopping Assistant references and bounded history; verified-sales Inventory Advisor and no stock mutation; Visual Bag Search image validation and in-stock matches |
+| Notifications and activity | Own-recipient isolation, unread/single/all read actions, order and stock alerts, duplicate prevention, unauthorized activity rejection, filtered histories, dashboard values and idempotent schema startup |
 
-| Local verification on November 26, 2026 (AI feature branch) | Recorded result |
+## 5. Manual UI acceptance checks
+
+Run the following on a disposable environment. Use separate customer/admin sessions when testing access and notifications.
+
+| Area | Steps | Expected behavior |
+| --- | --- | --- |
+| Storefront and category input | Browse products, filter by laptop/budget, add an eligible monogram; create category with slug `test-bag` | Real data, correct fees and readable messages; uppercase/spaced slugs rejected |
+| Maya success | Create a checkout and use an official [Sandbox success card](https://developers.maya.ph/reference/testing-and-validating-your-maya-checkout-integration) | Order becomes Paid after backend verification; customer/admin receive payment updates; sale is reflected once |
+| Maya failure | Use a Sandbox decline test case; return and verify, then restore cart | No fake Paid status; eligible retryable order can return items to bag |
+| Bag Finder | Ask for a 16-inch laptop under ₱2,000 and open results | Actual eligible product links; distinguish AI picks from catalog matches |
+| Shopping Assistant | Ask a question, then a follow-up | Context-aware answer or safe fallback; truthful product links |
+| Visual Bag Search | Select a supported photo; search, replace/remove; try invalid type or oversized image | Preview, validated matches or recoverable unavailable error; invalid photo rejected |
+| Inventory Advisor | Analyze as admin, check quantities and explanatory labels, refresh report | Recent paid sales and available stock; rules fallback works; no automatic stock change |
+| Dashboard | Compare cards with the selected test database and latest orders | Gross sales/paid/pending counts, low-stock watchlist and latest activity; no placeholder metrics |
+| Notifications | Change an eligible visible product from 5+ to ≤4 and advance a demo order; open separate inboxes | Admin receives inventory/store alerts; customer sees only own order; read and mark-all update badge |
+| Activity logs | Edit demo product/category/coupon, adjust stock, change order status, filter entries | Actual committed actions with actor, reference and time; customer cannot access |
+| PWA offline | Visit catalog/cart online, simulate offline, reconnect | Cached public catalog; offline banner; protected actions and checkout need internet |
+| Responsive UI | Check mobile, tablet and desktop widths | Clear navigation, cards, recommendations and notification rows; no horizontal overflow |
+
+## 6. Latest recorded verification
+
+These results refer to the latest merged application source, GitHub main revision `9e3de18` (PR #9), tested November 27, 2026 on a disposable PostgreSQL 17.12 database with simulated provider responses.
+
+| Check | Result |
 | --- | --- |
-| Postman collection with controlled provider responses | 44 requests completed, 94 assertions passed, 0 failures |
-| Backend integration tests on a fresh test schema | 16 tests passed, 0 failures |
-| Browser checks | Shopping Assistant conversation, product shortcuts, offline state, and admin Inventory Advisor passed at 360×800, 390×844, 412×915, and 800×600 |
+| Frontend production build | Passed; manifest and service worker generated |
+| Backend integration tests | 18 passed, 0 failed, 0 skipped |
+| Complete Postman collection | 53 requests, 0 failed |
+| Postman assertions | 118 passed, 0 failed |
+| API reference | OpenAPI parsed; 41 operations |
+| Admin/customer browser checks | Dashboard, activity, private notification inbox, unread count, read actions, role protection and customer order link passed |
+| Responsive browser checks | Dashboard, activity log and both inboxes passed at 360, 390, 412, 800, 1050, 1100, 1260, 1440 and 1920 CSS-pixel widths |
+| Source archives | Submission and private backup ZIPs passed integrity and source-content verification |
 
-| Local verification on November 26, 2026 (Visual Bag Search feature branch) | Recorded result |
-| --- | --- |
-| Postman collection with controlled provider responses | 46 requests completed, 99 assertions passed, 0 failures |
-| Backend integration suite | 17 tests passed, 0 failures |
-| Browser checks | Valid photo upload, resizing, catalog links, invalid photo, clearing and offline handling passed at all four required viewports. Existing Shopping Assistant and Inventory Advisor checks also passed. |
+Earlier local runs also verified core catalog/offline PWA, Shopping Assistant, Bag Finder, Visual Bag Search and Inventory Advisor. Historical progression:
 
-Use the [deployed storefront](https://carry-and-co.vercel.app/) to verify the live integrations during your demo. Try **Bag Finder** with “A bag for my 16-inch laptop under ₱2,000” and compare the results with the catalog. Products can come from the catalog fallback during a Gemini timeout, so check `aiAssisted` in the API response when demonstrating a Gemini-assisted result. For the payment check, use a test account and a Maya Sandbox test card, then confirm the order reaches **Paid** in the storefront.
+| Run | Requests | Assertions | Integration tests |
+| --- | --- | --- | --- |
+| Original recorded baseline | 40 | 84 | 14 |
+| Shopping Assistant + Inventory Advisor | 44 | 94 | 16 |
+| Visual Bag Search | 46 | 99 | 17 |
+| Dashboard + notifications + activity (PR #9) | 53 | 118 | 18 |
 
-After a new run, record the date, environment, case or suite, expected result, actual result, and pass or fail. Keep screenshots or reports free of credentials and tokens.
+## 7. Live deployment checkpoints
 
-## Admin workspace, notifications and activity
+Local controlled-provider results do **not** certify production keys or external availability. Before the finals presentation:
 
-The API tests cover recipient-scoped notification lists, unread counts, single/all read actions, rejection of another recipient's notification ID, admin-only activity access, checkout replay and payment verification deduplication, low-stock and out-of-stock alerts, order status notifications, filtered audit history, dashboard summaries, and idempotent schema startup. The Postman collection includes a **Notifications and activity** group. Use a disposable test database; no real customer notifications are sent.
+- [ ] Verify deployed frontend and API health, Swagger, account access and admin dashboard.
+- [ ] Obtain `aiAssisted: true` for live Gemini demonstrations; record fallback separately.
+- [ ] Complete a live Maya **Sandbox** test order and confirm the verified Paid status. Separately verify delivery and processing of an authentic sandbox webhook event.
+- [ ] Check notifications and activity on that demo transaction. Do not expose customer data or provider tokens.
+- [ ] Confirm PWA installability in Chrome and all four required viewports (360×800, 390×844, 412×915, 800×600).
+- [ ] Capture fresh mobile Lighthouse scores from the deployed homepage. The recorded targets are Performance ≥75, Accessibility ≥85, Best Practices ≥85 and SEO ≥80. Previous local homepage scores (94/100/100/100) were obtained before the latest changes and are not fresh production measurements.
+
+Log future results with the date, Git revision, environment, test case, expected result, observed result and pass/fail status. The recorded requirements are from the project handoff, not a replacement for the original instructor rubric.

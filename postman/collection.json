@@ -715,7 +715,7 @@
             "url": "{{baseUrl}}/checkout",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"shipping\": {\n    \"name\": \"Jamie Cruz\",\n    \"phone\": \"09171234567\",\n    \"address\": \"123 Quezon Avenue\",\n    \"city\": \"Iligan City\",\n    \"postalCode\": \"9200\"\n  }\n}",
+              "raw": "{\n  \"shipping\": {\n    \"name\": \"Demo Customer\",\n    \"phone\": \"09000000000\",\n    \"address\": \"DEMO ADDRESS - NOT FOR DELIVERY\",\n    \"city\": \"Demo City\",\n    \"postalCode\": \"0000\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -767,7 +767,7 @@
             "url": "{{baseUrl}}/checkout",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"shipping\": {\n    \"name\": \"Jamie Cruz\",\n    \"phone\": \"09171234567\",\n    \"address\": \"123 Quezon Avenue\",\n    \"city\": \"Iligan City\",\n    \"postalCode\": \"9200\"\n  },\n  \"couponCode\": \"CARRY10\",\n  \"total_cents\": 1\n}",
+              "raw": "{\n  \"shipping\": {\n    \"name\": \"Demo Customer\",\n    \"phone\": \"09000000000\",\n    \"address\": \"DEMO ADDRESS - NOT FOR DELIVERY\",\n    \"city\": \"Demo City\",\n    \"postalCode\": \"0000\"\n  },\n  \"couponCode\": \"CARRY10\",\n  \"total_cents\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -810,7 +810,7 @@
             "url": "{{baseUrl}}/checkout",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"shipping\": {\n    \"name\": \"Jamie Cruz\",\n    \"phone\": \"09171234567\",\n    \"address\": \"123 Quezon Avenue\",\n    \"city\": \"Iligan City\",\n    \"postalCode\": \"9200\"\n  },\n  \"couponCode\": \"CARRY10\",\n  \"total_cents\": 1\n}",
+              "raw": "{\n  \"shipping\": {\n    \"name\": \"Demo Customer\",\n    \"phone\": \"09000000000\",\n    \"address\": \"DEMO ADDRESS - NOT FOR DELIVERY\",\n    \"city\": \"Demo City\",\n    \"postalCode\": \"0000\"\n  },\n  \"couponCode\": \"CARRY10\",\n  \"total_cents\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1491,6 +1491,186 @@
               }
             ],
             "url": "{{baseUrl}}/admin/ai/inventory"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications and activity",
+      "item": [
+        {
+          "name": "Reject anonymous notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(401));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/notifications"
+          }
+        },
+        {
+          "name": "Customer notification inbox",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));",
+                  "pm.test('Private paginated inbox', () => { const r = pm.response.json(); pm.expect(r.data).to.be.an('array'); pm.expect(r.meta.unread).to.be.a('number'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notifications?limit=5"
+          }
+        },
+        {
+          "name": "Customer unread count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));",
+                  "pm.test('Unread count', () => pm.expect(pm.response.json().data.unread).to.be.at.least(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notifications/unread-count"
+          }
+        },
+        {
+          "name": "Read all customer notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));",
+                  "pm.test('Updated count', () => pm.expect(pm.response.json().data.updated).to.be.at.least(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notifications/read-all"
+          }
+        },
+        {
+          "name": "Admin notification inbox",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));",
+                  "pm.test('Unread filter', () => pm.expect(pm.response.json().data.every(n => n.read_at === null)).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/notifications?unread=true"
+          }
+        },
+        {
+          "name": "Reject customer activity access",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(403));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{customerToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/activity"
+          }
+        },
+        {
+          "name": "Read admin activity log",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Expected HTTP status', () => pm.response.to.have.status(200));",
+                  "pm.test('Consistent envelope', () => pm.expect(pm.response.json().success).to.equal(pm.response.code < 400));",
+                  "pm.test('Activity filter', () => pm.expect(pm.response.json().data.every(n => n.category === 'inventory')).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/admin/activity?category=inventory&limit=5"
           }
         }
       ]

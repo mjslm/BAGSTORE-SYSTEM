@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotifications } from '../context/NotificationsContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { mayaRedirect, money, orderNumber, statusLabel, when } from '../utils/format.js';
 import { ErrorBox, SkeletonLoader } from '../components/Feedback.jsx';
@@ -21,6 +22,7 @@ export default function Order({ paymentReturn }) {
   const ready = id && /^[0-9a-f-]{36}$/i.test(id);
   const { token, user } = useAuth();
   const { refresh } = useCart();
+  const { refresh: refreshNotifications } = useNotifications();
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(null);
   const [error, setError] = useState(null);
@@ -39,13 +41,13 @@ export default function Order({ paymentReturn }) {
         setError(null);
         if (paymentReturn && result.data.status === 'pending_payment') {
           const verified = await api('/orders/' + id + '/verify', { token, method: 'POST', signal: controller.signal });
-          if (!controller.signal.aborted) setLoaded({ id, order: verified.data });
+          if (!controller.signal.aborted) { setLoaded({ id, order: verified.data }); refreshNotifications(); }
         }
       } catch (failure) { if (!controller.signal.aborted) setError({ id, failure }); }
     }
     load();
     return () => controller.abort();
-  }, [id, ready, token, paymentReturn, reload]);
+  }, [id, ready, token, paymentReturn, reload, refreshNotifications]);
 
   async function update(path, method, body) {
     setBusy(true);
@@ -53,7 +55,7 @@ export default function Order({ paymentReturn }) {
     try {
       const { data } = await api(path, { token, method, body });
       if (path.endsWith('restore-cart')) { await refresh(); navigate('/cart'); }
-      else setLoaded({ id, order: data });
+      else { setLoaded({ id, order: data }); refreshNotifications(); }
     } catch (failure) { setError({ id, failure }); }
     finally { setBusy(false); }
   }

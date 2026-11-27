@@ -5,10 +5,11 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import { NetworkStatusProvider } from './context/NetworkStatusContext.jsx';
+import { NotificationsProvider } from './context/NotificationsContext.jsx';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode><BrowserRouter><NetworkStatusProvider><AuthProvider><CartProvider>
+  <React.StrictMode><BrowserRouter><NetworkStatusProvider><AuthProvider><CartProvider><NotificationsProvider>
     <App />
-  </CartProvider></AuthProvider></NetworkStatusProvider></BrowserRouter></React.StrictMode>,
+  </NotificationsProvider></CartProvider></AuthProvider></NetworkStatusProvider></BrowserRouter></React.StrictMode>,
 );

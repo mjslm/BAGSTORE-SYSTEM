@@ -120,3 +120,10 @@ Use this GitHub repository for both deployments and your existing Supabase proje
 - Name the archive `ITPE101_FINAL_<SECTION>_CARRYANDCO.zip` using your actual section or the name your instructor assigns. Include both `package-lock.json` files and both `.env.example` templates. Exclude `node_modules`, `dist`, `.env` files with real values, and local database data.
 - Extract the archive to a fresh folder and follow the setup steps above with a demo database. Check the storefront, Swagger, and Postman before presenting.
 - Keep a backup screen recording in case the internet or a hosting service is unavailable. Use demo accounts and Maya Sandbox test cards, and keep personal data and credentials out of the recording.
+
+### Admin workspace and notifications
+
+- **Admin → Dashboard** shows all-time paid sales, paid and unpaid order counts, current low stock, five recent orders and four recent activity events. Existing payments and inventory rules are unchanged.
+- The bell in the header opens a private, read/unread notification inbox for the signed-in account. Customers receive their own order/payment updates. Admins receive store order/payment updates and alerts when available stock crosses the low-stock threshold (4 units) or reaches zero. The unread badge refreshes on navigation and every 30 seconds while the tab is visible.
+- **Admin → Activity logs** lists order status, inventory adjustments, product changes, category changes and coupon changes with event type, reference, actor and time. Only administrators may access the feed. Existing order/stock histories are reused; catalog/coupon activity and notifications are recorded from this release onward.
+- Restart the backend to create the two new tables automatically. No database reset, seed rerun or new environment variables are needed. Notifications are in-app, not email, SMS or browser push.

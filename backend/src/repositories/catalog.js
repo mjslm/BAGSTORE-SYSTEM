@@ -1,3 +1,4 @@
+import { notifyLowStock } from './activity.js';
 import { all, one, page, productFields, productFrom, publicProduct } from './store.js';
 
 export function listProducts(db, filters, admin = false) {
@@ -28,7 +29,7 @@ export function stockHistory(db, id, filters) {
 }
 
 export function lockCustomer(tx, id) {
-  return one(tx, 'SELECT id FROM users WHERE id=$1 FOR UPDATE', [id]);
+  return one(tx, 'SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE', [id]);
 }
 
 export async function cartRows(db, userId, lock = false) {
@@ -76,9 +77,10 @@ export function setStock(db, id, stock) {
   return db.query('UPDATE products SET stock=$2 WHERE id=$1', [id, stock]);
 }
 
-export function logStock(tx, id, oldStock, newStock, reason, actor = null) {
-  return tx.query('INSERT INTO stock_history (product_id,old_stock,new_stock,reason,actor) VALUES ($1,$2,$3,$4,$5)',
+export async function logStock(tx, id, oldStock, newStock, reason, actor = null) {
+  await tx.query('INSERT INTO stock_history (product_id,old_stock,new_stock,reason,actor) VALUES ($1,$2,$3,$4,$5)',
     [id, oldStock, newStock, reason, actor]);
+  if ((oldStock > 4 && newStock <= 4) || (oldStock > 0 && newStock === 0)) await notifyLowStock(tx, id);
 }
 
 export function lockCartProduct(db, id) {

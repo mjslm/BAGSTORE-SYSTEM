@@ -13,7 +13,7 @@ import { createDiscovery } from '../src/services/discovery.js';
 const payments = new Map();
 const payloads = [];
 const key = generateKeyPairSync('rsa', { modulusLength: 2048 });
-const shipping = { name: 'Jamie Cruz', phone: '09171234567', address: '123 Quezon Avenue', city: 'Iligan City', postalCode: '9200' };
+const shipping = { name: 'Demo Customer', phone: '09000000000', address: 'DEMO ADDRESS - NOT FOR DELIVERY', city: 'Demo City', postalCode: '0000' };
 let db, checkout, server, origin, jamie, alex, admin;
 let geminiReply;
 const schema = 'carry_test_' + randomUUID().replaceAll('-', '');
@@ -441,4 +441,81 @@ test('Visual Bag Search validates the image and returns only current in-stock pr
   assert.equal(unavailable.status, 503);
   assert.equal(unavailable.error.code, 'AI_UNAVAILABLE');
   assert.equal((await post('/ai/visual-search', { ...body, data: 'A'.repeat(1450000) })).status, 413);
+});
+
+test('private notifications and store activity reflect actual committed order and inventory changes', async () => {
+  assert.equal((await get('/notifications')).status, 401);
+  assert.equal((await get('/notifications/unread-count')).status, 401);
+  assert.equal((await get('/admin/activity', jamie)).status, 403);
+  assert.equal((await call('PATCH', '/notifications/read-all')).status, 401);
+  const customer = await post('/auth/register', { name: 'Inbox Test', email: 'inbox@example.com', password: 'InboxTest2026!' });
+  assert.equal(customer.status, 201);
+  const token = customer.data.token;
+  assert.equal((await get('/notifications', token)).meta.unread, 0);
+  const stock = (units) => call('PATCH', '/admin/products/everyday-tote/stock', { token: admin, body: { stock: units, reason: 'Test inventory count' } });
+  assert.equal((await stock(5)).status, 200);
+  const adminBefore = (await get('/notifications/unread-count', admin)).data.unread;
+  const alexBefore = (await get('/notifications/unread-count', alex)).data.unread;
+  assert.equal((await cart(token, 'everyday-tote')).status, 200);
+  const key = randomUUID();
+  const placed = await place(token, key);
+  assert.equal(placed.status, 201);
+  const order = placed.data;
+  assert.equal((await place(token, key)).status, 200);
+  assert.equal((await get('/notifications/unread-count', token)).data.unread, 1);
+  assert.equal((await get('/notifications/unread-count', admin)).data.unread, adminBefore + 2);
+  assert.equal((await get('/notifications/unread-count', alex)).data.unread, alexBefore);
+  const inbox = await get('/notifications?unread=true&limit=5', token);
+  assert.equal(inbox.data.length, 1);
+  assert.equal(inbox.data[0].href, '/orders/' + order.id);
+  assert.equal(inbox.data[0].kind, 'order');
+  assert.equal((await call('PATCH', '/notifications/' + inbox.data[0].id + '/read', { token: alex })).status, 404);
+  assert.equal((await get('/notifications/unread-count', token)).data.unread, 1);
+  assert.equal((await call('PATCH', '/notifications/' + inbox.data[0].id + '/read', { token })).status, 200);
+  assert.equal((await get('/notifications?unread=true', token)).meta.total, 0);
+  assert.equal((await get('/notifications', token)).data.length, 1);
+  payments.get(order.gateway_id).paymentStatus = 'PAYMENT_SUCCESS';
+  assert.equal((await post('/orders/' + order.id + '/verify', {}, token)).data.status, 'paid');
+  assert.equal((await post('/orders/' + order.id + '/verify', {}, token)).data.status, 'paid');
+  for (const status of ['processing','shipped','delivered']) {
+    assert.equal((await call('PATCH', '/admin/orders/' + order.id, { token: admin, body: { status } })).status, 200);
+  }
+  assert.equal((await call('PATCH', '/admin/orders/' + order.id, { token: admin, body: { status: 'delivered' } })).status, 409);
+  const updates = await get('/notifications?limit=20', token);
+  assert.equal(updates.meta.total, 5);
+  assert.equal(updates.meta.unread, 4);
+  assert.equal(updates.data.filter((item) => item.title === 'Payment confirmed').length, 1);
+  assert.ok(updates.data.every((item) => !('user_id' in item)));
+  const adminInbox = (await get('/notifications?limit=20', admin)).data;
+  assert.ok(adminInbox.some((item) => item.kind === 'inventory' && item.message.includes('4 available units')));
+  assert.ok(adminInbox.some((item) => item.title === 'Order delivered' && item.href.endsWith(order.id)));
+  assert.equal((await call('PATCH', '/notifications/read-all', { token })).data.updated, 4);
+  assert.equal((await get('/notifications/unread-count', token)).data.unread, 0);
+  assert.equal((await get('/notifications/unread-count', alex)).data.unread, alexBefore);
+  assert.equal((await get('/notifications/unread-count', admin)).data.unread, adminBefore + 6);
+  // Invalid or repeated changes must not add another notification or activity entry.
+  const countBefore = (await get('/notifications/unread-count', admin)).data.unread;
+  assert.equal((await stock(3)).status, 200);
+  assert.equal((await stock(0)).status, 200);
+  assert.equal((await stock(0)).status, 200);
+  assert.equal((await get('/notifications/unread-count', admin)).data.unread, countBefore + 1);
+  const orderActivity = await get('/admin/activity?category=orders&limit=50', admin);
+  assert.equal(orderActivity.status, 200);
+  assert.equal(orderActivity.data.filter((item) => item.reference === '#' + order.id.slice(0,8).toUpperCase()).length, 5);
+  assert.ok(orderActivity.data.some((item) => item.action === 'Order delivered'));
+  for (const [category, action] of [['products','Product removed'],['categories','Category updated'],['coupons','Coupon updated'],['inventory','Stock updated']]) {
+    const result = await get('/admin/activity?category=' + category + '&limit=50', admin);
+    assert.equal(result.status, 200);
+    assert.ok(result.data.every((item) => item.category === category));
+    assert.ok(result.data.some((item) => item.action === action));
+  }
+  const dashboard = (await get('/admin/dashboard', admin)).data;
+  assert.ok(dashboard.recentOrders.some((item) => item.id === order.id));
+  assert.ok(dashboard.lowStockCount >= dashboard.lowStock.length);
+  assert.ok(dashboard.activity.length > 0);
+  assert.ok(dashboard.recentOrders.every((item) => !('shipping' in item) && !('user_id' in item)));
+  // Idempotent schema startup preserves existing rows, including read status.
+  await db.query(await readFile(new URL('../src/config/schema.sql', import.meta.url), 'utf8'));
+  assert.equal((await get('/notifications', token)).meta.total, 5);
+  assert.equal((await get('/notifications/unread-count', token)).data.unread, 0);
 });

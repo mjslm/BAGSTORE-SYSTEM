@@ -1,6 +1,7 @@
 import { productById } from '../repositories/store.js';
 import { requireValue, conflict, invalid } from '../utils/http.js';
 import * as repo from '../repositories/catalog.js';
+import { recordActivity, notifyLowStock } from '../repositories/activity.js';
 
 export { listCategories, listProducts, stockHistory } from '../repositories/catalog.js';
 
@@ -8,8 +9,13 @@ export async function getProduct(db, id) {
   return requireValue(await productById(db, id), 'This bag is unavailable.');
 }
 
-export async function saveCategory(db, id, input, create) {
-  return requireValue(await repo.saveCategoryRow(db, id, input, create));
+export function saveCategory(db, id, input, create, actor) {
+  return db.transaction(async (tx) => {
+    const category = requireValue(await repo.saveCategoryRow(tx, id, input, create));
+    await recordActivity(tx, actor, 'categories', create ? 'Category created' : 'Category updated', category.name,
+      category.active ? 'Category is active.' : 'Category is inactive.');
+    return category;
+  });
 }
 
 export function saveProduct(db, id, input, actor, create) {
@@ -20,16 +26,24 @@ export function saveProduct(db, id, input, actor, create) {
     if (create) {
       await repo.insertProduct(tx, id, input);
       if (input.stock) await repo.logStock(tx, id, 0, input.stock, 'Opening inventory', actor);
+      if (input.stock <= 4) await notifyLowStock(tx, id);
     } else {
       requireValue(await repo.lockProduct(tx, id));
       await repo.updateProduct(tx, id, input);
     }
-    return productById(tx, id, true);
+    const product = await productById(tx, id, true);
+    await recordActivity(tx, actor, 'products', create ? 'Product created' : 'Product updated', product.name,
+      product.active ? 'Product is active.' : 'Product is inactive.');
+    return product;
   });
 }
 
-export async function deleteProduct(db, id) {
-  requireValue(await repo.hideProduct(db, id));
+export function deleteProduct(db, id, actor) {
+  return db.transaction(async (tx) => {
+    const product = requireValue(await productById(tx, id, true));
+    requireValue(await repo.hideProduct(tx, id));
+    await recordActivity(tx, actor, 'products', 'Product removed', product.name, 'Product removed from the catalog.');
+  });
 }
 
 export function adjustStock(db, id, input, actor) {

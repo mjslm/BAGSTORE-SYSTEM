@@ -96,3 +96,24 @@ FROM (VALUES ('phone-sling', 'Pocket Phone Sling'), ('camera-sling', 'Camera Day
              ('zip-crossbody', 'Zip Around Crossbody')) AS corrected(id, name)
 WHERE EXISTS (SELECT 1 FROM migration)
   AND product.id = corrected.id AND product.name = 'Oat' AND product.category_id = 'crossbody';
+
+-- In-app notifications are private to their recipient. No existing orders or stock are changed.
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind text NOT NULL CHECK (kind IN ('order','payment','inventory')),
+  title text NOT NULL, message text NOT NULL, href text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(), read_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS notifications_inbox ON notifications(user_id, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS notifications_unread ON notifications(user_id) WHERE read_at IS NULL;
+CREATE TABLE IF NOT EXISTS admin_activity (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  actor uuid NOT NULL REFERENCES users(id),
+  category text NOT NULL CHECK (category IN ('products','categories','coupons')),
+  action text NOT NULL, reference text NOT NULL, description text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS admin_activity_date ON admin_activity(created_at DESC);
+CREATE INDEX IF NOT EXISTS order_history_date ON order_history(created_at DESC);
+CREATE INDEX IF NOT EXISTS stock_history_date ON stock_history(created_at DESC);

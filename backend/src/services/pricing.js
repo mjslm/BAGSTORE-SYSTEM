@@ -1,3 +1,4 @@
+import { recordActivity } from '../repositories/activity.js';
 import { couponByCode, couponUses, writeCoupon } from '../repositories/coupons.js';
 import { createDiscount } from '../patterns/discounts.js';
 import { conflict, invalid, requireValue } from '../utils/http.js';
@@ -30,9 +31,14 @@ export async function quoteCart(db, rows, code, userId, lock = false) {
   return { items, subtotal_cents, discount_cents, shipping_cents, total_cents: subtotal_cents - discount_cents + shipping_cents, currency };
 }
 
-export async function saveCoupon(db, code, input, create) {
+export async function saveCoupon(db, code, input, create, actor) {
   if (!createDiscount(input.kind).validate(input.value)) {
     throw invalid('VALIDATION', 'The coupon discount is invalid.', { value: 'Enter a valid discount.' });
   }
-  return requireValue(await writeCoupon(db, code, input, create));
+  return db.transaction(async (tx) => {
+    const coupon = requireValue(await writeCoupon(tx, code, input, create));
+    await recordActivity(tx, actor, 'coupons', create ? 'Coupon created' : 'Coupon updated', code,
+      coupon.active ? 'Coupon is active.' : 'Coupon is inactive.');
+    return coupon;
+  });
 }
